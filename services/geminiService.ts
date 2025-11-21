@@ -1,6 +1,5 @@
-
 import { GoogleGenAI } from '@google/genai';
-import type { AuditMetrics, ReportData, AIReadinessMetrics, ChangeRiskMetrics, AIPerformanceProjection } from '../types';
+import type { AuditMetrics, ReportData, AIReadinessMetrics, ChangeRiskMetrics, AIPerformanceProjection, Coordinates } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -60,6 +59,7 @@ You are:
 Your tone:
 - Intimidating, brutally honest, financially focused.
 - Clinical, like a surgeon; not rude, but unforgiving.
+- **Strategic & Executive:** Use high-level business terminology appropriate for a Board of Directors.
 
 Avoid:
 - Generic marketing speak.
@@ -70,10 +70,11 @@ Avoid:
 ==================================================
 
 - If \`locale === 'en'\`: Write in English, formal business tone.
-- If \`locale === 'me'\`: Write in Montenegrin (Latin script).
+- If \`locale === 'me'\`: Write in Montenegrin (Latin script, Ijekavian dialect).
 - If \`locale === 'tr'\`: Write in Turkish, formal business tone.
 
 NEVER mix multiple languages in the same response.
+All analysis text, notes, and narratives MUST be in the requested language.
 
 ==================================================
 5. CORE TASKS & BEHAVIOURS
@@ -145,28 +146,52 @@ export interface BoardBriefingResponse {
 
 // Helper function to safely clean and extract JSON from AI responses
 function cleanJSON(text: string): string {
-  // Remove markdown code blocks
+  // 1. Remove markdown code blocks
   let clean = text.replace(/```json/g, '').replace(/```/g, '');
   
-  // Find the first '{' and the last '}'
+  // 2. Find the first '{' and the last '}'
   const firstOpen = clean.indexOf('{');
   const lastClose = clean.lastIndexOf('}');
   
   if (firstOpen !== -1 && lastClose !== -1) {
-    return clean.substring(firstOpen, lastClose + 1);
+    clean = clean.substring(firstOpen, lastClose + 1);
   }
-  
+
+  // 3. Attempt to fix common JSON issues
+  // Remove trailing commas before closing braces/brackets which are invalid in JSON
+  clean = clean.replace(/,(\s*[}\]])/g, '$1');
+
   return clean;
 }
 
-export async function searchBusinessOnMaps(query: string, lang: string): Promise<Partial<AuditMetrics> | null> {
+function getLanguageName(code: string): string {
+  switch(code) {
+    case 'tr': return 'Turkish';
+    case 'me': return 'Montenegrin (Latin Script)';
+    default: return 'English';
+  }
+}
+
+export async function searchBusinessOnMaps(query: string, lang: string, userLocation?: Coordinates | null): Promise<Partial<AuditMetrics> | null> {
   try {
+    const langName = getLanguageName(lang);
+    
+    let locationContext = "";
+    if (userLocation) {
+        locationContext = `
+        **USER LOCATION (LIVE TRACKING)**: 
+        Lat: ${userLocation.lat}, Lng: ${userLocation.lng}.
+        Prioritize businesses near this location if the search query is generic.
+        `;
+    }
+
     const prompt = `
       You are an expert digital auditor using Google Maps.
       
       Task:
       1. Search for the business "${query}" on Google Maps. 
          - If ambiguous, prioritize businesses in Montenegro or the Balkans.
+         ${locationContext}
       2. Analyze the "Claim Status" (Owner replies, complete details).
       3. Find the "Market Leader" competitor in the same city/category.
       4. **ANALYZE DIGITAL ACCESS POINTS**: WhatsApp, Instagram, Website.
@@ -174,12 +199,19 @@ export async function searchBusinessOnMaps(query: string, lang: string): Promise
          - Look at photos/street view: Is it Small (<50m2), Medium (50-150m2), Large (150-300m2), or Huge (300m2+)? This is critical for 360 tour pricing.
          - Infer "Search Volume" and "Brand Mentions" based on review velocity and fame.
 
+      Language Requirement: 
+      - The output JSON keys must stay in English (e.g., "industry", "isClaimed").
+      - The values for "industry" and any text fields MUST be in ${langName}.
+
       Output a VALID JSON object (RFC 8259 standard).
+      - Do NOT include markdown formatting like \`\`\`json.
+      - Do NOT include comments (// or /* */).
+      - **ESCAPE ALL DOUBLE QUOTES** inside string values (e.g. "name": "The \\"Best\\" Place").
       
       JSON Structure:
       {
         "businessName": "Exact Name from Maps",
-        "industry": "Inferred Category",
+        "industry": "Inferred Category (in ${langName})",
         "address": "Real Address",
         "googleMapsUri": "https://maps.google.com/...",
         "isClaimed": "yes" | "no" | "partial",
@@ -214,8 +246,9 @@ export async function searchBusinessOnMaps(query: string, lang: string): Promise
       }
     `;
 
+    // Use gemini-2.5-flash for the initial search scan as it is fast and efficient for tool usage
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash', 
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }],
@@ -232,6 +265,7 @@ export async function searchBusinessOnMaps(query: string, lang: string): Promise
 
 export async function generateAIAnalysis(metrics: AuditMetrics, score: number, lang: string): Promise<Partial<ReportData> | null> {
   try {
+    const langName = getLanguageName(lang);
     const prompt = `
      EXECUTE TASK: A) VISIBILITY & COMPETITOR AUDIT + B) AI TRANSFORMATION & READINESS ANALYSIS.
      
@@ -239,7 +273,11 @@ export async function generateAIAnalysis(metrics: AuditMetrics, score: number, l
      Current Visibility Score: ${score}/100.
      Benchmark Competitor: ${metrics.benchmark?.name || "Market Leader"}.
      Venue Size Estimate: ${metrics.venueSize}.
-     Language: ${lang}.
+     
+     **CRITICAL - LANGUAGE REQUIREMENT**:
+     - Output Language: ${langName}.
+     - ALL narrative text, explanations, notes, and lists must be in ${langName}.
+     - Do not write in English unless the requested language is English.
      
      Input Metrics:
      ${JSON.stringify(metrics, null, 2)}
@@ -262,38 +300,42 @@ export async function generateAIAnalysis(metrics: AuditMetrics, score: number, l
      4. **Grounding:** Use Google Search to validate the Benchmark's actual digital footprint.
 
      5. Output strictly VALID JSON (RFC 8259).
+     - **NO COMMENTS** inside the JSON structure.
+     - **NO TRAILING COMMAS**.
+     - **ESCAPE DOUBLE QUOTES** inside string values (e.g. "They are \\"invisible\\" to tourists").
      
      JSON Structure:
      {
-       "visibilityAnalysis": "String. Brutally honest audit text. MUST include a specific 'Lost Opportunities' section detailing the traffic types identified above.",
+       "visibilityAnalysis": "String (in ${langName}). Brutally honest audit text. MUST include a specific 'Lost Opportunities' section detailing the traffic types identified above. STRICTLY ESCAPE ALL DOUBLE QUOTES WITHIN THIS STRING.",
        "aiReadiness": {
           "level": "Nascent" | "Emerging" | "Structured" | "Integrated",
           "dataStrategyMaturity": "Ad-hoc" | "Basic" | "Managed" | "Optimized",
           "governanceScore": number,
           "cultureScore": number,
-          "notes": "String. Strategic assessment.",
-          "priorityUseCases": ["string", "string"]
+          "notes": "String (in ${langName}). Strategic assessment.",
+          "priorityUseCases": ["string (in ${langName})", "string (in ${langName})"]
        },
        "changeRisk": {
           "resistanceLevel": "Low" | "Medium" | "High",
           "leadershipAlignment": number,
           "talentGap": number,
           "uxRisk": number,
-          "notes": "String.",
-          "recommendedInterventions": ["string"]
+          "notes": "String (in ${langName}).",
+          "recommendedInterventions": ["string (in ${langName})"]
        },
        "roiProjection": {
-          "estimatedAnnualRevenueLeakage": "string",
-          "potentialRecoveryWithAI": "string",
+          "estimatedAnnualRevenueLeakage": "string (currency)",
+          "potentialRecoveryWithAI": "string (percentage or currency)",
           "timeToImpactMonths": number,
           "keyKPIs": ["string"],
-          "narrative": "String."
+          "narrative": "String (in ${langName})."
        }
      }
     `;
 
+    // UPGRADE: Using gemini-3-pro-preview for superior reasoning and report generation
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -315,12 +357,15 @@ export async function generateBoardBriefing(
   try {
     const { fullName, companyName, role, report, locale } = request;
     const auditMetrics = report.metrics;
+    const langName = getLanguageName(locale);
     
     const prompt = `
      EXECUTE TASK: C) BOARD-LEVEL BRIEFING (AI & VISIBILITY THREAT MEMO).
      
      Recipient: ${fullName} (${role}) at ${companyName}.
-     Language: ${locale}.
+     Language: ${langName}.
+     
+     **STRICT LANGUAGE RULE**: The entire briefing MUST be written in ${langName}.
      
      Audit Data:
      - Score: ${report.totalScore}/100
@@ -332,8 +377,9 @@ export async function generateBoardBriefing(
      Generate the full Board Briefing text now.
     `;
 
+    // UPGRADE: Using gemini-3-pro-preview for high-quality executive writing
     const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,

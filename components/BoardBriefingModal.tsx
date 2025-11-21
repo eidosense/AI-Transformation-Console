@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, AlertCircle, Briefcase } from 'lucide-react';
 import type { BoardBriefingModalProps, BoardBriefingFormData } from '../types';
@@ -123,15 +122,15 @@ export function BoardBriefingModal({
     me: {
       title: 'Generiši Strateški Memorandum (Board Briefing)',
       subtitle:
-        'Pretvorite ovu analizu u formalni dokument za donosioce odluka (CEO/CFO) koji jasno ukazuje na propuštene prihode i rizike.',
+        'Pretvorite ovu analizu u formalni dokument za donosioce odluka (CEO/CFO) koji jasno kvantifikuje propuštene prihode i operativne rizike.',
       disclaimer:
-        'Generišemo izvještaje isključivo za stvarne poslovne subjekte. Molimo koristite poslovni email — javni domeni (gmail, yahoo, itd.) se automatski odbijaju.',
-      fullName: 'Puno Ime',
+        'Usluga je dostupna isključivo verifikovanim poslovnim subjektima. Molimo koristite službeni email — nalozi sa javnih domena (gmail, yahoo, itd.) neće biti procesuirani.',
+      fullName: 'Ime i Prezime',
       companyName: 'Naziv Kompanije',
-      role: 'Vaša Funkcija',
+      role: 'Pozicija / Funkcija',
       workEmail: 'Službeni Email',
-      emailPlaceholder: 'vi@kompanija.com',
-      generate: 'Generiši Dokument',
+      emailPlaceholder: 'ime.prezime@kompanija.me',
+      generate: 'Generiši Memorandum',
       cancel: 'Odustani',
     },
     tr: {
@@ -152,144 +151,126 @@ export function BoardBriefingModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-slate-800">
-          <div className="flex items-start gap-3">
-            <Briefcase className="w-6 h-6 text-cyan-400 mt-1" />
-            <div>
-              <h2 className="text-xl font-bold text-slate-100">{text.title}</h2>
-              <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-                {text.subtitle}
-              </p>
+        <div className="p-6 border-b border-slate-800 flex items-start justify-between bg-slate-900 sticky top-0 z-10">
+          <div>
+            <div className="flex items-center gap-2 text-cyan-400 mb-1">
+              <Briefcase size={20} />
+              <span className="uppercase tracking-wider text-xs font-bold">CONFIDENTIAL // EIDOSENSE EXECUTIVE</span>
             </div>
+            <h2 className="text-xl font-bold text-white">{text.title}</h2>
+            <p className="text-slate-400 text-sm mt-1">{text.subtitle}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-100 transition"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+            <X size={24} />
           </button>
         </div>
 
-        {/* Disclaimer */}
-        <div className="mx-6 mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-200/90 leading-relaxed">
-            {text.disclaimer}
-          </p>
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          
+          {/* Disclaimer */}
+          <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-lg flex gap-3 items-start">
+             <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+             <p className="text-xs text-red-200 leading-relaxed">
+                {text.disclaimer}
+             </p>
+          </div>
+
+          <form id="briefing-form" onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Full Name */}
+                <div className="space-y-1">
+                    <label className="text-xs uppercase text-slate-500 font-bold tracking-wider">{text.fullName}</label>
+                    <input 
+                        type="text" 
+                        name="fullName"
+                        required
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                    />
+                </div>
+
+                {/* Company Name */}
+                <div className="space-y-1">
+                    <label className="text-xs uppercase text-slate-500 font-bold tracking-wider">{text.companyName}</label>
+                    <input 
+                        type="text" 
+                        name="companyName"
+                        required
+                        value={formData.companyName}
+                        onChange={handleChange}
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                    />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Role */}
+                <div className="space-y-1">
+                    <label className="text-xs uppercase text-slate-500 font-bold tracking-wider">{text.role}</label>
+                    <select 
+                        name="role"
+                        required
+                        value={formData.role}
+                        onChange={handleChange}
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all appearance-none"
+                    >
+                        <option value="" disabled>Select Role...</option>
+                        {ROLE_OPTIONS.map(r => (
+                            <option key={r} value={r}>{r}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Work Email */}
+                <div className="space-y-1">
+                    <label className="text-xs uppercase text-slate-500 font-bold tracking-wider">{text.workEmail}</label>
+                    <input 
+                        type="email" 
+                        name="workEmail"
+                        required
+                        placeholder={text.emailPlaceholder}
+                        value={formData.workEmail}
+                        onChange={handleChange}
+                        className={`w-full bg-slate-950 border rounded p-3 text-white focus:ring-1 outline-none transition-all ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                    />
+                    {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+                </div>
+            </div>
+          </form>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Full Name */}
-          <div>
-            <label
-              htmlFor="fullName"
-              className="block text-sm font-medium text-slate-300 mb-2"
+        {/* Footer */}
+        <div className="p-6 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3 sticky bottom-0 z-10">
+            <button 
+                type="button" 
+                onClick={onClose}
+                className="px-4 py-2 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
-              {text.fullName}
-            </label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              required
-              value={formData.fullName}
-              onChange={handleChange}
-              className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm px-4 py-2.5 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/70 transition"
-            />
-          </div>
-
-          {/* Company Name */}
-          <div>
-            <label
-              htmlFor="companyName"
-              className="block text-sm font-medium text-slate-300 mb-2"
-            >
-              {text.companyName}
-            </label>
-            <input
-              type="text"
-              id="companyName"
-              name="companyName"
-              required
-              value={formData.companyName}
-              onChange={handleChange}
-              className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm px-4 py-2.5 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/70 transition"
-            />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-slate-300 mb-2"
-            >
-              {text.role}
-            </label>
-            <select
-              id="role"
-              name="role"
-              required
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm px-4 py-2.5 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/70 transition"
-            >
-              <option value="">Select role...</option>
-              {ROLE_OPTIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Work Email */}
-          <div>
-            <label
-              htmlFor="workEmail"
-              className="block text-sm font-medium text-slate-300 mb-2"
-            >
-              {text.workEmail}
-            </label>
-            <input
-              type="email"
-              id="workEmail"
-              name="workEmail"
-              required
-              placeholder={text.emailPlaceholder}
-              value={formData.workEmail}
-              onChange={handleChange}
-              className={`w-full bg-slate-800 border ${
-                emailError ? 'border-red-500' : 'border-slate-700'
-              } text-slate-100 text-sm px-4 py-2.5 rounded-md focus:outline-none focus:ring-2 ${
-                emailError ? 'focus:ring-red-500/70' : 'focus:ring-cyan-500/70'
-              } transition`}
-            />
-            {emailError && (
-              <p className="mt-2 text-xs text-red-400">{emailError}</p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-slate-100 transition"
-            >
-              {text.cancel}
+                {text.cancel}
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2.5 text-sm font-bold rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            <button 
+                type="submit" 
+                form="briefing-form"
+                disabled={isSubmitting}
+                className="px-6 py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg shadow-cyan-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isSubmitting ? 'Generating...' : text.generate}
+                {isSubmitting ? (
+                    <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Processing...
+                    </>
+                ) : (
+                    <>
+                        <Briefcase size={18} />
+                        {text.generate}
+                    </>
+                )}
             </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

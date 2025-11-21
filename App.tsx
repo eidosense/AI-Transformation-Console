@@ -1,14 +1,14 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, AlertTriangle, CheckCircle, Share2, LayoutDashboard, Search, ChevronRight, AlertOctagon, MapPin, Zap, TrendingUp, Target, Lock, Globe, Link as LinkIcon, Megaphone, Brain, Database, Users, ShieldAlert, Briefcase, ArrowUpRight, BarChart3, PieChart, FileText, Copy, X, ExternalLink, Phone, Instagram, MessageCircle, Box, Scale } from 'lucide-react';
 import { generateAIAnalysis, searchBusinessOnMaps, generateBoardBriefing } from './services/geminiService';
-import { Language, AuditMetrics, ReportData, Package, BoardBriefingFormData } from './types';
-import { TRANSLATIONS, INITIAL_METRICS } from './constants';
+import { Language, AuditMetrics, ReportData, Package, BoardBriefingFormData, Coordinates } from './types';
+import { TRANSLATIONS, INITIAL_METRICS, LEVEL_TRANSLATIONS } from './constants';
 import ScoreGauge from './components/ScoreGauge';
 import MapVisualizer from './components/MapVisualizer';
 import { BoardBriefingModal } from './components/BoardBriefingModal';
+import { ContactModal } from './components/ContactModal';
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(Language.EN);
   const [auditMetrics, setAuditMetrics] = useState<AuditMetrics>(INITIAL_METRICS);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -19,18 +19,40 @@ const App: React.FC = () => {
   const [report, setReport] = useState<ReportData | null>(null);
   const [view, setView] = useState<'audit' | 'report'>('audit');
   const [activeTab, setActiveTab] = useState<'visibility' | 'ai-readiness' | 'change' | 'roi'>('visibility');
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   
   // Briefing Modal State
   const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
   const [briefingContent, setBriefingContent] = useState<string | null>(null);
 
+  // Contact/Plan Modal State
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+
   const t = TRANSLATIONS[lang];
+  
+  // LIVE TRACKING: Get Geolocation on Mount
+  useEffect(() => {
+      if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+              (position) => {
+                  console.log("Live Tracking Active:", position.coords);
+                  setUserLocation({
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude
+                  });
+              },
+              (err) => console.warn("Geolocation access denied or failed.", err),
+              { enableHighAccuracy: true }
+          );
+      }
+  }, []);
 
   // --- DYNAMIC PACKAGE GENERATION ---
   const getDynamicPackages = (metrics: AuditMetrics, lang: Language): Package[] => {
      const packages: Package[] = [];
 
-     // 1. BASE PACKAGE (Always needed)
+     // 1. BASE PACKAGE (Always needed if unclaimed or bad NAP)
      if (metrics.isClaimed !== 'yes' || metrics.napConsistent === false) {
          const titles = {
              en: "Survival Kit", me: "Paket za Opstanak", tr: "Hayatta Kalma Kiti"
@@ -51,6 +73,16 @@ const App: React.FC = () => {
      if (metrics.has360 !== 'professional') {
         let price = "";
         let m2Text = "";
+        let venueSizeME = metrics.venueSize as string;
+
+        if (lang === 'me') {
+            venueSizeME = {
+                'Small': 'Mali (<50m²)',
+                'Medium': 'Srednji (50-150m²)',
+                'Large': 'Veliki (150-300m²)',
+                'Huge': 'XXL (300m²+)'
+            }[metrics.venueSize] || metrics.venueSize;
+        }
         
         // Pricing Logic based on inferred venue size
         if (metrics.venueSize === 'Small') {
@@ -72,27 +104,44 @@ const App: React.FC = () => {
         };
         const features = {
             en: ["Google Street View Trusted", `Pricing for ${metrics.venueSize} Venue`, "VR Hosting Included", "Conversion Boost (+30%)"],
-            me: ["Google Street View Sertifikat", `Cijena za veličinu: ${metrics.venueSize}`, "VR Hosting Uključen", "Povećanje Konverzije (+30%)"],
+            me: ["Google Street View Sertifikat", `Cijena za: ${venueSizeME}`, "Uključen VR Hosting", "Rast Konverzije (+30%)"],
             tr: ["Google Street View Onaylı", `${m2Text} İçin Fiyat`, "VR Barındırma Dahil", "Dönüşüm Artışı (+30%)"]
         };
 
         packages.push({
             name: titles[lang],
             price: price,
-            highlight: lang === 'tr' ? `m² Bazlı Teklif (${metrics.venueSize})` : (lang === 'me' ? `Ponuda po kvadraturi (${metrics.venueSize})` : `${metrics.venueSize} Venue Pricing`),
+            highlight: lang === 'tr' ? `m² Bazlı Teklif (${metrics.venueSize})` : (lang === 'me' ? `Ponuda za prostor: ${venueSizeME}` : `${metrics.venueSize} Venue Pricing`),
             recommended: true,
             features: features[lang]
         });
      }
 
-     // 3. WEBSITE / DIGITAL PRESENCE
+     // 3. VISUAL IDENTITY (New - for missing professional photos)
+     if (!metrics.hasProfessionalPhotos || metrics.photoCount < 10) {
+         const titles = {
+             en: "Visual Identity Pack", me: "Vizuelni Identitet", tr: "Görsel Kimlik Paketi"
+         };
+         const features = {
+             en: ["Professional Photo Session", "Food/Interior Styling", "Google Maps Optimization", "15 High-Res Edits"],
+             me: ["Profesionalno Fotografisanje", "Stilizovanje Hrane/Enterijera", "Optimizacija za Google Mape", "15 Obrađenih Fotografija"],
+             tr: ["Profesyonel Fotoğraf Çekimi", "Yemek/İç Mekan Stili", "Google Harita Optimizasyonu", "15 Yüksek Çözünürlüklü Düzenleme"]
+         };
+         packages.push({
+             name: titles[lang],
+             price: "€250",
+             features: features[lang]
+         });
+     }
+
+     // 4. WEBSITE / DIGITAL PRESENCE
      if (!metrics.hasWebsite) {
          const titles = {
              en: "Web Transformation", me: "Web Transformacija", tr: "Web Dönüşümü"
          };
          const features = {
              en: ["High-Performance Next.js Site", "Direct Booking Engine", "SEO Foundation", "Mobile-First"],
-             me: ["Ultra-brzi Sajt (Next.js)", "Direktne Rezervacije", "SEO Temelj", "Mobile-First Dizajn"],
+             me: ["High-Performance Sajt (Next.js)", "Sistem za Rezervacije", "SEO Optimizacija", "Mobile-First Dizajn"],
              tr: ["Yüksek Performanslı Web Sitesi", "Direkt Rezervasyon Motoru", "SEO Temeli", "Mobil Öncelikli"]
          };
          packages.push({
@@ -102,13 +151,30 @@ const App: React.FC = () => {
          });
      }
 
-     // 4. MARKET DOMINANCE (Always available as upsell)
+     // 5. SOCIAL & ADS (New - if website exists but social is weak)
+     if (metrics.hasWebsite && (!metrics.hasInstagram || !metrics.hasWhatsApp)) {
+        const titles = {
+             en: "Social Accelerator", me: "Social Accelerator", tr: "Sosyal Hızlandırıcı"
+         };
+         const features = {
+             en: ["Instagram/Meta Business Setup", "WhatsApp Integration", "First Month Content Plan", "Ad Account Setup"],
+             me: ["Instagram/Meta Podešavanje", "WhatsApp Integracija", "Plan Sadržaja (1. Mjesec)", "Podešavanje Reklama"],
+             tr: ["Instagram/Meta Kurulumu", "WhatsApp Entegrasyonu", "İlk Ay İçerik Planı", "Reklam Hesabı Kurulumu"]
+         };
+         packages.push({
+            name: titles[lang],
+            price: "€299",
+            features: features[lang]
+         });
+     }
+
+     // 6. MARKET DOMINANCE (Always available as upsell)
      const domTitles = {
          en: "Market Dominator", me: "Tržišna Dominacija", tr: "Pazar Hükümdarı"
      };
      const domFeatures = {
          en: ["Aggressive Ad Ops", "Reputation Defense", "Influencer Outreach", "Full SEO & Backlink Strategy"],
-         me: ["Agresivne Kampanje (Ads)", "Upravljanje Reputacijom", "Influencer Saradnja", "Potpuna SEO Dominacija"],
+         me: ["Agresivno Oglašavanje (Ads)", "Upravljanje Reputacijom", "Influenser Marketing", "Sveobuhvatna SEO Strategija"],
          tr: ["Agresif Reklam Yönetimi", "İtibar Savunması", "Influencer Ağı Erişimi", "Tam SEO ve Backlink Hakimiyeti"]
      };
      packages.push({
@@ -128,7 +194,8 @@ const App: React.FC = () => {
     setSearchStatus('idle');
     setAuditMetrics(INITIAL_METRICS); 
     
-    const result = await searchBusinessOnMaps(searchQuery, lang);
+    // Pass userLocation to enable Live Tracking / Geolocation biased search
+    const result = await searchBusinessOnMaps(searchQuery, lang, userLocation);
     
     if (result) {
       setAuditMetrics(prev => ({ ...prev, ...result }));
@@ -167,696 +234,520 @@ const App: React.FC = () => {
     // 8. Competitors (0-10)
     if (m.competitorRanking === 'top3') score += 10;
     else if (m.competitorRanking === 'top10') score += 5;
-    // 9. Backlink Authority (0-10)
-    if (m.backlinkAuthority === 'High') score += 10;
-    else if (m.backlinkAuthority === 'Medium') score += 5;
-    // 10. Influencer Impact (0-10)
-    if (m.influencerImpact === 'Viral') score += 10;
-    else if (m.influencerImpact === 'Moderate') score += 5;
-    // 11. Website & CTA (0-5)
-    let ctaScore = 0;
-    if (m.hasWebsite) ctaScore += 2;
-    if (m.hasMenuOrBooking) ctaScore += 1;
-    if (m.hasWhatsApp || m.hasInstagram) ctaScore += 2;
-    score += Math.min(5, ctaScore);
+    
+    // 9. Digital Presence (0-15)
+    if (m.hasWebsite) score += 5;
+    if (m.hasMenuOrBooking) score += 5;
+    if (m.hasWhatsApp || m.hasInstagram) score += 5;
 
-    return Math.min(100, score);
+    // 10. Photo Count (0-5)
+    if (m.photoCount > 20) score += 5;
+    else if (m.photoCount > 5) score += 2;
+
+    return Math.min(score, 100);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerateReport = async () => {
     setIsGenerating(true);
     setLoadingText(t.analyzing);
+    
     const score = calculateScore(auditMetrics);
     
-    setTimeout(() => setLoadingText(t.analyzingCompetitors), 2000);
+    // Simulate scanning steps
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setLoadingText(t.analyzingCompetitors);
     
-    let level: ReportData['level'] = 'Invisible';
-    if (score >= 80) level = 'Highly Visible';
-    else if (score >= 60) level = 'Visible';
-    else if (score >= 40) level = 'Weak';
+    const aiData = await generateAIAnalysis(auditMetrics, score, lang);
+    
+    if (aiData) {
+      let level: 'Invisible' | 'Weak' | 'Visible' | 'Highly Visible' = 'Invisible';
+      if (score >= 80) level = 'Highly Visible';
+      else if (score >= 60) level = 'Visible';
+      else if (score >= 30) level = 'Weak';
 
-    // Call Gemini
-    const analysisData = await generateAIAnalysis(auditMetrics, score, lang);
-
-    // Check if analysisData is valid
-    if (analysisData) {
-        setReport({
-            metrics: auditMetrics,
-            totalScore: score,
-            level,
-            visibilityAnalysis: analysisData.visibilityAnalysis || "Analysis Failed",
-            aiReadiness: analysisData.aiReadiness as any,
-            changeRisk: analysisData.changeRisk as any,
-            roiProjection: analysisData.roiProjection as any,
-            generatedAt: new Date().toISOString()
-        });
-        setView('report');
-        window.scrollTo(0,0);
-    } else {
-        // Fallback if AI fails
-        alert("AI Analysis generation failed. Please try again.");
+      setReport({
+        metrics: auditMetrics,
+        totalScore: score,
+        level,
+        visibilityAnalysis: aiData.visibilityAnalysis || "Analysis not available.",
+        aiReadiness: aiData.aiReadiness || {
+          level: 'Nascent',
+          dataStrategyMaturity: 'Ad-hoc',
+          governanceScore: 0,
+          cultureScore: 0,
+          notes: "No data.",
+          priorityUseCases: []
+        },
+        changeRisk: aiData.changeRisk || {
+          resistanceLevel: 'High',
+          leadershipAlignment: 0,
+          talentGap: 100,
+          uxRisk: 100,
+          notes: "No data.",
+          recommendedInterventions: []
+        },
+        roiProjection: aiData.roiProjection || {
+          estimatedAnnualRevenueLeakage: "Unknown",
+          potentialRecoveryWithAI: "Unknown",
+          timeToImpactMonths: 12,
+          keyKPIs: [],
+          narrative: "No data."
+        },
+        generatedAt: new Date().toISOString()
+      });
+      setView('report');
     }
-
     setIsGenerating(false);
   };
 
   const handleBriefingGenerate = async (formData: BoardBriefingFormData) => {
     if (!report) return;
-    
-    const result = await generateBoardBriefing({
-        ...formData,
-        report: report, 
-        locale: lang
+    const response = await generateBoardBriefing({
+      ...formData,
+      report,
+      locale: lang
     });
-
-    if (result.success && result.briefing) {
-        setBriefingContent(result.briefing);
-        setIsBriefingModalOpen(false);
+    
+    if (response.success && response.briefing) {
+      setBriefingContent(response.briefing);
     } else {
-        console.error("Briefing failed:", result.error);
-        alert("Failed to generate briefing. Please try again.");
+      alert(response.error || 'Failed to generate briefing');
     }
   };
 
-  const getScoreColorClass = (score: number) => {
-    if (score < 40) return "text-red-500";
-    if (score < 60) return "text-orange-500";
-    if (score < 80) return "text-yellow-400";
-    return "text-emerald-500";
+  // Helper to handle package selection
+  const handleSelectPlan = (pkg: Package) => {
+      setSelectedPackage(pkg);
+      setIsContactModalOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500 selection:text-slate-900 flex flex-col">
-      {/* Header */}
-      <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('audit')}>
-            {/* Eidosense Logo / Icon Placeholder */}
-            <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-slate-900 transform rotate-45 bg-transparent"></div>
-            </div>
-            <div className="flex flex-col leading-tight">
-                <h1 className="font-bold text-xl tracking-tight text-white">
-                  EIDOSENSE <span className="font-light text-slate-400">VISIBILITY X-RAY</span>
-                </h1>
-                <span className="text-[10px] text-cyan-500 font-mono uppercase tracking-[0.2em]">AI Transformation Console</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             <div className="hidden md:block text-xs text-slate-500 font-mono border border-slate-800 px-2 py-1 rounded">
-                 v2.5.1 [LEGAL]
-             </div>
-             <div className="flex space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
-                {Object.values(Language).map((l) => (
-                <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                    lang === l 
-                        ? 'bg-slate-700 text-white shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                >
-                    {l.toUpperCase()}
-                </button>
-                ))}
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="flex-grow max-w-7xl mx-auto p-4 md:p-8 w-full">
-        
-        {/* AUDIT VIEW */}
-        {view === 'audit' && (
-          <div className="animate-fadeIn space-y-12">
-            <div className="text-center py-16 max-w-4xl mx-auto">
-              <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-100 via-cyan-200 to-slate-400 mb-6 tracking-tight">
-                {t.subtitle}
-              </h1>
-              <p className="text-slate-400 text-lg md:text-xl font-light">
-                 AI alone doesn’t change business. <span className="text-white font-normal">Strategy, psychology, and execution do.</span>
-              </p>
-              <p className="mt-2 text-sm text-slate-500 uppercase tracking-widest">
-                  Start your diagnostic below
-              </p>
-            </div>
-
-            {/* SEARCH BAR */}
-            <div className="max-w-2xl mx-auto mb-16 relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl blur opacity-25"></div>
-              <div className="relative bg-slate-900 rounded-2xl p-2 flex flex-col md:flex-row gap-2 shadow-2xl">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
-                  <input 
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t.searchPlaceholder}
-                    className="w-full bg-transparent border-none pl-12 pr-4 py-4 text-white placeholder-slate-600 text-lg focus:ring-0 focus:outline-none"
-                  />
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 selection:text-cyan-100">
+        {/* Simple Navigation/Header */}
+        <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
+            <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-cyan-400">
+                    <Zap className="w-6 h-6" />
+                    <span className="font-bold tracking-wider">EIDOSENSE <span className="text-slate-500 text-xs font-normal">VISIBILITY X-RAY</span></span>
                 </div>
-                <button 
-                  onClick={handleMapSearch}
-                  disabled={isSearching || !searchQuery}
-                  className="bg-white hover:bg-slate-200 text-slate-900 font-bold py-4 px-8 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
-                >
-                  {isSearching ? (
-                    <>
-                       <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-                       <span className="text-sm">{t.searching}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-5 h-5 text-cyan-600 fill-current" />
-                      <span>{t.searchButton}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              {searchStatus === 'error' && (
-                <div className="mt-4 text-center text-red-400 text-sm font-mono">
-                   [SYSTEM ALERT] {t.searchError}
+                <div className="flex gap-2">
+                    {(['en', 'me', 'tr'] as Language[]).map((l) => (
+                        <button 
+                            key={l} 
+                            onClick={() => setLang(l)}
+                            className={`px-3 py-1 text-xs font-bold rounded uppercase transition-all ${lang === l ? 'bg-cyan-900/50 text-cyan-400 border border-cyan-500/50' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            {l}
+                        </button>
+                    ))}
                 </div>
-              )}
             </div>
+        </nav>
 
-            {/* LIVE DATA DASHBOARD (PRE-REPORT) */}
-            {searchStatus === 'success' && (
-                <div className="animate-fadeInUp grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Map Visualizer */}
-                    <div className="lg:col-span-4">
-                        <div className="h-full bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col relative overflow-hidden">
-                           <div className="absolute top-0 left-0 w-full h-1 bg-cyan-500/50"></div>
-                           <div className="flex items-center justify-between mb-3">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> Geo-Location Intel
-                              </h3>
-                              <div className="flex gap-1">
-                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                                <span className="text-[10px] text-slate-400">LIVE</span>
-                              </div>
-                           </div>
-                           <div className="flex-grow">
-                              <MapVisualizer 
-                                targetLocation={auditMetrics.location}
-                                competitorLocation={auditMetrics.benchmark?.location}
-                                targetName={auditMetrics.businessName}
-                                competitorName={auditMetrics.benchmark?.name}
-                              />
-                           </div>
-                        </div>
+        <main className="max-w-7xl mx-auto px-4 py-8">
+            {view === 'audit' ? (
+                <div className="max-w-2xl mx-auto space-y-8">
+                    <div className="text-center space-y-4">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">{t.title}</h1>
+                        <p className="text-slate-400 text-lg">{t.subtitle}</p>
                     </div>
 
-                    {/* Metrics & Action */}
-                    <div className="lg:col-span-8 space-y-6">
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-                            {/* Scanlines effect */}
-                            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(transparent_1px,transparent_1px),linear-gradient(90deg,#ffffff_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-
-                            <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-                                <div>
-                                  <div className="flex items-center gap-3">
-                                    <h2 className="text-2xl font-bold text-white">{auditMetrics.businessName}</h2>
-                                    {auditMetrics.googleMapsUri && (
-                                        <a 
-                                            href={auditMetrics.googleMapsUri} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-slate-500 hover:text-cyan-400 transition"
-                                            title="Open Real Google Maps Listing"
-                                        >
-                                            <ExternalLink className="w-4 h-4" />
-                                        </a>
-                                    )}
-                                  </div>
-                                  <p className="text-slate-500 text-sm font-mono">{auditMetrics.industry} • {auditMetrics.address}</p>
-                                </div>
-                                <div className="text-right hidden md:block">
-                                    <span className="text-xs text-slate-500 uppercase block">System Status</span>
-                                    <span className="text-emerald-400 font-mono text-sm">Ready for Deep Scan</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                                <MetricCard 
-                                    label={t.searchVolume}
-                                    value={auditMetrics.searchVolume} 
-                                    color={auditMetrics.searchVolume === 'High' ? 'text-green-400' : 'text-yellow-400'} 
-                                    icon={<Search className="w-4 h-4" />}
-                                />
-                                <MetricCard 
-                                    label={t.brandMentions}
-                                    value={auditMetrics.brandMentions} 
-                                    color={auditMetrics.brandMentions === 'Viral' ? 'text-pink-400' : 'text-slate-400'} 
-                                    icon={<MessageCircle className="w-4 h-4" />}
-                                />
-                                <MetricCard 
-                                    label="Reviews" 
-                                    value={auditMetrics.reviewCount.toString()} 
-                                    color="text-white" 
-                                    icon={<Users className="w-4 h-4" />}
-                                />
-                                <MetricCard 
-                                    label="Venue Size" 
-                                    value={auditMetrics.venueSize} 
-                                    color="text-cyan-400"
-                                    icon={<Box className="w-4 h-4" />}
-                                />
-                            </div>
-
-                            <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 flex flex-col md:flex-row items-center gap-4">
-                                <div className="p-3 bg-slate-900 rounded-lg border border-slate-700">
-                                    <Briefcase className="w-6 h-6 text-purple-400" />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-white">Benchmark Target: {auditMetrics.benchmark?.name || "Unknown"}</h4>
-                                    <p className="text-xs text-slate-400">Comparing your digital footprint against the category leader.</p>
-                                </div>
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={isGenerating}
-                                    className="w-full md:w-auto px-6 py-3 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                         <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-                                         <span className="text-xs">{loadingText}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                         <span>{t.generateReport}</span>
-                                         <ArrowUpRight className="w-4 h-4" />
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-          </div>
-        )}
-
-        {/* REPORT VIEW */}
-        {view === 'report' && report && (
-          <div className="animate-fadeInUp pb-20">
-            {/* Top Controls */}
-            <div className="flex justify-between items-center mb-8 print:hidden">
-               <button onClick={() => setView('audit')} className="text-slate-500 hover:text-white flex items-center gap-2 text-sm font-mono">
-                 &larr; NEW AUDIT
-               </button>
-               <div className="flex gap-2">
-                   <button 
-                     onClick={() => setIsBriefingModalOpen(true)}
-                     className="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-white flex items-center gap-2 text-xs font-bold uppercase shadow-lg shadow-cyan-500/20"
-                   >
-                     <FileText className="w-3 h-3" /> Board Briefing
-                   </button>
-                   <button onClick={() => window.print()} className="bg-slate-900 border border-slate-700 hover:border-slate-500 px-4 py-2 rounded-lg text-slate-300 flex items-center gap-2 text-xs font-bold uppercase">
-                     <Share2 className="w-3 h-3" /> Export PDF
-                   </button>
-               </div>
-            </div>
-
-            {/* REPORT CONTAINER */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 shadow-2xl overflow-hidden min-h-[80vh]">
-                
-                {/* Report Header */}
-                <div className="bg-slate-950 p-6 border-b border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                             <h2 className="text-2xl font-bold text-white">{report.metrics.businessName}</h2>
-                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${report.totalScore >= 60 ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'}`}>
-                                 {report.totalScore}/100 Score
-                             </span>
-                        </div>
-                        <p className="text-xs text-slate-500 font-mono uppercase">AI Transformation Audit • {new Date().toLocaleDateString()}</p>
-                    </div>
-                    {/* TAB NAVIGATION */}
-                    <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
-                        {[
-                            { id: 'visibility', label: 'Visibility X-Ray', icon: <Globe className="w-3 h-3"/> },
-                            { id: 'ai-readiness', label: 'AI Readiness', icon: <Brain className="w-3 h-3"/> },
-                            { id: 'change', label: 'Change Risk', icon: <Users className="w-3 h-3"/> },
-                            { id: 'roi', label: 'ROI Simulation', icon: <TrendingUp className="w-3 h-3"/> },
-                        ].map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
-                                className={`px-4 py-2 text-xs font-bold uppercase rounded flex items-center gap-2 transition-all ${
-                                    activeTab === tab.id 
-                                    ? 'bg-slate-800 text-white shadow-sm border border-slate-700' 
-                                    : 'text-slate-500 hover:text-slate-300'
-                                }`}
+                    {/* Search Box */}
+                    <form onSubmit={handleMapSearch} className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg blur opacity-30 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                        <div className="relative flex bg-slate-900 rounded-lg overflow-hidden border border-slate-800">
+                            <input 
+                                type="text" 
+                                placeholder={t.searchPlaceholder}
+                                className="flex-1 bg-transparent border-none px-6 py-4 text-white placeholder-slate-500 focus:ring-0 outline-none"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <button 
+                                type="submit" 
+                                disabled={isSearching}
+                                className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 font-bold tracking-wide disabled:opacity-50 flex items-center gap-2 transition-colors"
                             >
-                                {tab.icon}
-                                <span className="hidden md:inline">{tab.label}</span>
+                                {isSearching ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <Search className="w-5 h-5" />
+                                )}
+                                <span className="hidden sm:inline">{t.searchButton}</span>
                             </button>
-                        ))}
-                    </div>
-                </div>
+                        </div>
+                    </form>
 
-                {/* TAB CONTENT AREA */}
-                <div className="p-6 md:p-8 bg-slate-900 min-h-[500px]">
-                    
-                    {/* 1. VISIBILITY TAB */}
-                    {activeTab === 'visibility' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn">
-                            <div className="lg:col-span-1">
-                                <div className="bg-slate-950 rounded-xl p-6 border border-slate-800 flex flex-col items-center justify-center h-full relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90 z-10 pointer-events-none"></div>
-                                    <ScoreGauge score={report.totalScore} />
-                                    <div className="mt-6 text-center z-20 relative">
-                                        <h3 className={`text-xl font-bold ${getScoreColorClass(report.totalScore)} mb-1`}>
-                                            {report.level}
-                                        </h3>
-                                        <p className="text-xs text-slate-500 max-w-[200px] mx-auto">
-                                            Based on 13 data points including Search Volume & Social Gravity.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="lg:col-span-2 space-y-6">
-                                <div className="bg-slate-950 border border-slate-800 p-6 rounded-xl">
-                                    <h3 className="text-sm font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
-                                        <Target className="w-4 h-4" /> Competitive Intelligence
-                                    </h3>
-                                    <p className="text-slate-300 leading-relaxed text-sm whitespace-pre-line border-l-2 border-cyan-500 pl-4">
-                                        {report.visibilityAnalysis}
-                                    </p>
-                                </div>
-
-                                {/* DIGITAL ASSETS STATUS SECTION */}
-                                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                                            <LinkIcon className="w-3 h-3" /> Digital Access Points
-                                        </h3>
-                                        <span className="text-[10px] text-slate-600 italic">* {t.notDetected}</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        <div className={`p-3 rounded border flex items-center gap-2 ${report.metrics.hasWebsite ? 'bg-emerald-900/10 border-emerald-900/30 text-emerald-400' : 'bg-red-900/10 border-red-900/30 text-red-400'}`}>
-                                            {report.metrics.hasWebsite ? <CheckCircle className="w-4 h-4"/> : <X className="w-4 h-4"/>}
-                                            <span className="text-xs font-bold">Website</span>
-                                        </div>
-                                        <div className={`p-3 rounded border flex items-center gap-2 ${report.metrics.hasMenuOrBooking ? 'bg-emerald-900/10 border-emerald-900/30 text-emerald-400' : 'bg-red-900/10 border-red-900/30 text-red-400'}`}>
-                                            {report.metrics.hasMenuOrBooking ? <CheckCircle className="w-4 h-4"/> : <X className="w-4 h-4"/>}
-                                            <span className="text-xs font-bold">Menu/Book</span>
-                                        </div>
-                                        <div className={`p-3 rounded border flex items-center gap-2 ${report.metrics.hasInstagram ? 'bg-emerald-900/10 border-emerald-900/30 text-emerald-400' : 'bg-red-900/10 border-red-900/30 text-red-400'}`}>
-                                            {report.metrics.hasInstagram ? <Instagram className="w-4 h-4"/> : <X className="w-4 h-4"/>}
-                                            <span className="text-xs font-bold">Instagram</span>
-                                        </div>
-                                        <div className={`p-3 rounded border flex items-center gap-2 ${report.metrics.hasWhatsApp ? 'bg-emerald-900/10 border-emerald-900/30 text-emerald-400' : 'bg-red-900/10 border-red-900/30 text-red-400'}`}>
-                                            {report.metrics.hasWhatsApp ? <Phone className="w-4 h-4"/> : <X className="w-4 h-4"/>}
-                                            <span className="text-xs font-bold">WhatsApp</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                                        <div className="text-xs text-slate-500 uppercase mb-1">Benchmark Leader</div>
-                                        <div className="text-lg font-bold text-white">{report.metrics.benchmark?.name}</div>
-                                        <div className="text-emerald-400 font-mono text-sm">{report.metrics.benchmark?.rating} Rating</div>
-                                    </div>
-                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                                        <div className="text-xs text-slate-500 uppercase mb-1">Your Status</div>
-                                        <div className="text-lg font-bold text-white">{report.metrics.competitorRanking === 'top3' ? 'Top Tier' : 'Lagging'}</div>
-                                        <div className="text-slate-400 font-mono text-sm">{report.metrics.reviewCount} Reviews</div>
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Live Tracking Indicator */}
+                    {userLocation && !isSearching && searchStatus === 'idle' && (
+                        <div className="flex items-center justify-center gap-2 text-cyan-500 text-xs animate-pulse mt-2">
+                            <MapPin className="w-3 h-3" />
+                            <span>Live Location Tracking Active</span>
                         </div>
                     )}
 
-                    {/* 2. AI READINESS TAB */}
-                    {activeTab === 'ai-readiness' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fadeIn">
-                            <div className="space-y-6">
-                                <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
-                                    <h3 className="text-sm font-bold text-cyan-500 uppercase mb-6 tracking-wider">Maturity Assessment</h3>
-                                    <div className="space-y-6">
-                                        <ProgressBar label="Governance & Security" value={report.aiReadiness.governanceScore} color="bg-purple-500" />
-                                        <ProgressBar label="Data Culture" value={report.aiReadiness.cultureScore} color="bg-cyan-500" />
+                    {searchStatus === 'error' && (
+                        <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-lg text-red-400 flex items-center gap-3">
+                            <AlertOctagon className="w-5 h-5" />
+                            {t.searchError}
+                        </div>
+                    )}
+
+                    {searchStatus === 'success' && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            {/* Results Card */}
+                            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                                <div className="p-6 border-b border-slate-800 flex justify-between items-start">
+                                    <div>
+                                        <div className="text-xs font-mono text-cyan-500 mb-1">{t.autoFilled}</div>
+                                        <h2 className="text-2xl font-bold text-white">{auditMetrics.businessName}</h2>
+                                        <p className="text-slate-400 text-sm">{auditMetrics.address}</p>
                                     </div>
-                                    <div className="mt-8 pt-6 border-t border-slate-900">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-400 text-sm">Overall Level</span>
-                                            <span className="px-3 py-1 bg-slate-800 text-white rounded text-sm font-bold">{report.aiReadiness.level}</span>
+                                    <div className="text-right">
+                                         <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t.score}</div>
+                                         <div className="text-3xl font-bold text-white">{calculateScore(auditMetrics)}<span className="text-sm text-slate-500">/100</span></div>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2">
+                                    <div className="p-6 border-b md:border-b-0 md:border-r border-slate-800 flex items-center justify-center bg-slate-950/50">
+                                        <ScoreGauge score={calculateScore(auditMetrics)} />
+                                    </div>
+                                    <div className="p-6 h-64">
+                                        <MapVisualizer 
+                                            targetLocation={auditMetrics.location}
+                                            competitorLocation={auditMetrics.benchmark?.location}
+                                            targetName={auditMetrics.businessName}
+                                            competitorName={auditMetrics.benchmark?.name}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Quick Metrics Grid */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-slate-800 border-t border-slate-800">
+                                    <div className="p-4 text-center">
+                                        <div className="text-xs text-slate-500 mb-1">Google Maps</div>
+                                        <div className={`font-bold ${auditMetrics.isClaimed === 'yes' ? 'text-green-400' : 'text-red-400'}`}>
+                                            {auditMetrics.isClaimed === 'yes' ? 'Claimed' : 'Unclaimed'}
                                         </div>
-                                        <div className="flex justify-between items-center mt-2">
-                                            <span className="text-slate-400 text-sm">Data Strategy</span>
-                                            <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded text-sm">{report.aiReadiness.dataStrategyMaturity}</span>
-                                        </div>
+                                    </div>
+                                    <div className="p-4 text-center">
+                                        <div className="text-xs text-slate-500 mb-1">Reviews</div>
+                                        <div className="font-bold text-white">{auditMetrics.reviewCount} <span className="text-xs text-slate-500">({auditMetrics.reviewRating}★)</span></div>
+                                    </div>
+                                    <div className="p-4 text-center">
+                                        <div className="text-xs text-slate-500 mb-1">Photos</div>
+                                        <div className="font-bold text-white">{auditMetrics.photoCount}</div>
+                                    </div>
+                                    <div className="p-4 text-center">
+                                        <div className="text-xs text-slate-500 mb-1">Competitor</div>
+                                        <div className="font-bold text-red-400 truncate px-2">{auditMetrics.benchmark?.name || 'Unknown'}</div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="space-y-6">
-                                <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 h-full">
-                                    <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">Architect's Notes</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed mb-6">
-                                        "{report.aiReadiness.notes}"
-                                    </p>
-                                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-3">Priority Use Cases</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {report.aiReadiness.priorityUseCases.map((uc, i) => (
-                                            <span key={i} className="px-3 py-1 bg-cyan-900/20 border border-cyan-500/30 text-cyan-300 text-xs rounded-full">
-                                                {uc}
-                                            </span>
+
+                            <button 
+                                onClick={handleGenerateReport}
+                                disabled={isGenerating}
+                                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-cyan-900/20 transition-all transform hover:scale-[1.01] disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        {loadingText}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Brain className="w-6 h-6" />
+                                        {t.generateReport}
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="space-y-8 animate-in fade-in duration-500">
+                    {/* Report Header */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-800">
+                         <div>
+                             <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                 <button onClick={() => setView('audit')} className="hover:text-cyan-400 transition-colors flex items-center gap-1 text-sm">
+                                     <ChevronRight className="w-4 h-4 rotate-180" /> Back
+                                 </button>
+                                 <span className="text-slate-700">/</span>
+                                 <span className="text-xs font-mono text-cyan-500">REPORT #{Math.floor(Math.random()*10000)}</span>
+                             </div>
+                             <h1 className="text-3xl font-bold text-white">{auditMetrics.businessName}</h1>
+                         </div>
+                         <div className="flex gap-3">
+                             <button 
+                                onClick={() => setIsBriefingModalOpen(true)}
+                                className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded border border-slate-700 flex items-center gap-2 transition-colors"
+                             >
+                                 <Briefcase className="w-4 h-4" />
+                                 <span>Board Briefing</span>
+                             </button>
+                         </div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex overflow-x-auto border-b border-slate-800 gap-1">
+                        {[
+                            {id: 'visibility', label: 'Visibility X-Ray', icon: Search},
+                            {id: 'ai-readiness', label: 'AI Readiness', icon: Brain},
+                            {id: 'change', label: 'Change Risk', icon: Scale},
+                            {id: 'roi', label: 'ROI Projection', icon: TrendingUp},
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`px-6 py-4 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id ? 'border-cyan-500 text-cyan-400 bg-cyan-950/10' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+                            >
+                                <tab.icon className="w-4 h-4" />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    {/* Tab Content */}
+                    <div className="min-h-[400px]">
+                        {activeTab === 'visibility' && report && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 space-y-6">
+                                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                            <Activity className="w-5 h-5 text-cyan-500" />
+                                            Visibility Analysis
+                                        </h3>
+                                        <div className="prose prose-invert max-w-none text-slate-300">
+                                            <p className="whitespace-pre-line">{report.visibilityAnalysis}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Packages List */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-xl font-bold text-white">{t.packages}</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {getDynamicPackages(auditMetrics, lang).map((pkg, idx) => (
+                                                <div key={idx} className={`relative bg-slate-900 border rounded-xl p-6 flex flex-col ${pkg.recommended ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'border-slate-800'}`}>
+                                                    {pkg.recommended && (
+                                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{t.recommended}</div>
+                                                    )}
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div>
+                                                            <h4 className="font-bold text-lg text-white">{pkg.name}</h4>
+                                                            {pkg.highlight && <div className="text-xs text-cyan-400 mt-1">{pkg.highlight}</div>}
+                                                        </div>
+                                                        <div className="text-xl font-mono font-bold text-white">{pkg.price}</div>
+                                                    </div>
+                                                    <ul className="space-y-2 mb-6 flex-1">
+                                                        {pkg.features.map((f, i) => (
+                                                            <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
+                                                                <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                                                <span>{f}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <button 
+                                                        onClick={() => handleSelectPlan(pkg)}
+                                                        className={`w-full py-2 rounded font-bold transition-colors ${pkg.recommended ? 'bg-cyan-600 hover:bg-cyan-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                                                    >
+                                                        {t.selectPlan}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sidebar Stats */}
+                                <div className="space-y-6">
+                                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                        <h3 className="text-sm uppercase tracking-wider text-slate-500 font-bold mb-4">{t.benchmark}</h3>
+                                        {auditMetrics.benchmark ? (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-white font-bold">{auditMetrics.benchmark.name}</span>
+                                                    <span className="text-yellow-400 font-bold">{auditMetrics.benchmark.rating}★</span>
+                                                </div>
+                                                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                    <div className="bg-red-500 h-full w-[80%]"></div>
+                                                </div>
+                                                <div className="text-xs text-slate-400">
+                                                    {t.outperformingPre} <strong>{(auditMetrics.benchmark.reviewCount - auditMetrics.reviewCount)}</strong> {t.outperformingPost}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-slate-500 text-sm italic">{t.noBenchmark}</div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                         <h3 className="text-sm uppercase tracking-wider text-slate-500 font-bold mb-4">{t.threatLevel}</h3>
+                                         <div className="flex items-center gap-3 mb-2">
+                                            <div className={`text-2xl font-bold ${report.totalScore < 50 ? 'text-red-500' : 'text-yellow-500'}`}>
+                                                {(LEVEL_TRANSLATIONS[lang] && LEVEL_TRANSLATIONS[lang][report.level]) || report.level}
+                                            </div>
+                                         </div>
+                                         <p className="text-xs text-slate-400 leading-relaxed">
+                                            {t.threatDesc1} <strong className="text-white">{(LEVEL_TRANSLATIONS[lang] && LEVEL_TRANSLATIONS[lang][report.level]) || report.level}</strong>. 
+                                            {t.threatDesc2} {auditMetrics.benchmark?.name || 'competitors'} {t.threatDesc3}
+                                         </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {activeTab === 'ai-readiness' && report && (
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                     <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Brain className="text-cyan-500" /> Readiness Assessment</h3>
+                                     <div className="text-4xl font-bold text-white mb-2">{report.aiReadiness.level}</div>
+                                     <p className="text-slate-400 mb-6">{report.aiReadiness.notes}</p>
+                                     
+                                     <div className="space-y-4">
+                                         <div>
+                                             <div className="flex justify-between text-xs text-slate-400 mb-1">Governance Score</div>
+                                             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                 <div className="bg-cyan-500 h-full transition-all duration-1000" style={{width: `${report.aiReadiness.governanceScore}%`}}></div>
+                                             </div>
+                                         </div>
+                                         <div>
+                                             <div className="flex justify-between text-xs text-slate-400 mb-1">Culture & Adoption</div>
+                                             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                 <div className="bg-purple-500 h-full transition-all duration-1000" style={{width: `${report.aiReadiness.cultureScore}%`}}></div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                     <h3 className="font-bold text-white mb-4">Priority Use Cases</h3>
+                                     <ul className="space-y-3">
+                                         {report.aiReadiness.priorityUseCases.map((uc, i) => (
+                                             <li key={i} className="flex gap-3 p-3 bg-slate-950/50 rounded border border-slate-800">
+                                                 <Zap className="w-5 h-5 text-yellow-500 shrink-0" />
+                                                 <span className="text-slate-300 text-sm">{uc}</span>
+                                             </li>
+                                         ))}
+                                     </ul>
+                                 </div>
+                             </div>
+                        )}
+                        
+                        {activeTab === 'change' && report && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:col-span-1">
+                                    <h3 className="font-bold text-white mb-6">Risk Matrix</h3>
+                                    <div className="space-y-6">
+                                         <div className="text-center">
+                                             <div className="text-sm text-slate-500 mb-2">Resistance Level</div>
+                                             <div className={`text-3xl font-bold ${report.changeRisk.resistanceLevel === 'High' ? 'text-red-500' : 'text-yellow-500'}`}>
+                                                 {report.changeRisk.resistanceLevel}
+                                             </div>
+                                         </div>
+                                         <div className="border-t border-slate-800 pt-6">
+                                             <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-slate-400">Talent Gap</span>
+                                                <span className="text-white">{report.changeRisk.talentGap}%</span>
+                                             </div>
+                                             <div className="w-full bg-slate-800 h-1.5 rounded-full">
+                                                <div className="bg-red-500 h-full" style={{width: `${report.changeRisk.talentGap}%`}}></div>
+                                             </div>
+                                         </div>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:col-span-2">
+                                    <h3 className="font-bold text-white mb-4">Intervention Plan</h3>
+                                    <p className="text-slate-400 mb-6">{report.changeRisk.notes}</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {report.changeRisk.recommendedInterventions.map((rec, i) => (
+                                            <div key={i} className="flex items-start gap-2 p-3 bg-slate-800/50 rounded">
+                                                <CheckCircle className="w-4 h-4 text-cyan-500 mt-1 shrink-0" />
+                                                <span className="text-sm text-slate-200">{rec}</span>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* 3. CHANGE RISK TAB */}
-                    {activeTab === 'change' && (
-                        <div className="animate-fadeIn">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                                <RiskCard title="Resistance" level={report.changeRisk.resistanceLevel} />
-                                <RiskCard title="Leadership Gap" score={100 - report.changeRisk.leadershipAlignment} isInverse />
-                                <RiskCard title="Talent Gap" score={report.changeRisk.talentGap} isInverse />
-                            </div>
-                            <div className="bg-red-900/10 border border-red-900/30 p-6 rounded-xl mb-6">
-                                <h3 className="text-red-400 font-bold uppercase text-sm mb-2 flex items-center gap-2">
-                                    <ShieldAlert className="w-4 h-4" /> Critical Risk Analysis
-                                </h3>
-                                <p className="text-slate-300 text-sm">{report.changeRisk.notes}</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {report.changeRisk.recommendedInterventions.map((rec, i) => (
-                                    <div key={i} className="bg-slate-950 p-4 rounded border border-slate-800 flex items-center gap-3">
-                                        <CheckCircle className="w-5 h-5 text-slate-600" />
-                                        <span className="text-sm text-slate-300">{rec}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 4. ROI TAB */}
-                    {activeTab === 'roi' && (
-                        <div className="animate-fadeIn text-center md:text-left">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                <div className="bg-slate-950 p-6 rounded-xl border border-red-900/30 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-2 opacity-10"><ArrowUpRight className="w-12 h-12 text-red-500"/></div>
-                                    <div className="text-xs text-slate-500 uppercase mb-2">Est. Annual Leakage</div>
-                                    <div className="text-3xl font-bold text-red-400">{report.roiProjection.estimatedAnnualRevenueLeakage}</div>
-                                    <div className="text-[10px] text-red-300/50 mt-1">Recurring Loss</div>
-                                </div>
-                                <div className="bg-slate-950 p-6 rounded-xl border border-emerald-900/30 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-2 opacity-10"><TrendingUp className="w-12 h-12 text-emerald-500"/></div>
-                                    <div className="text-xs text-slate-500 uppercase mb-2">Recovery Potential</div>
-                                    <div className="text-3xl font-bold text-emerald-400">{report.roiProjection.potentialRecoveryWithAI}</div>
-                                    <div className="text-[10px] text-emerald-300/50 mt-1">With Transformation</div>
-                                </div>
-                                <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
-                                    <div className="text-xs text-slate-500 uppercase mb-2">Time to Impact</div>
-                                    <div className="text-3xl font-bold text-white">{report.roiProjection.timeToImpactMonths} <span className="text-sm font-normal text-slate-500">Months</span></div>
-                                </div>
-                            </div>
-                            <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 mb-8">
-                                <h3 className="text-sm font-bold text-slate-400 uppercase mb-2">Strategic Narrative</h3>
-                                <p className="text-slate-300 text-sm italic">"{report.roiProjection.narrative}"</p>
-                            </div>
-
-                            <div className="border-t border-slate-800 pt-8">
-                                <h3 className="text-center text-lg font-bold text-white mb-6 uppercase tracking-widest">Eidosense Dynamic Solutions</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    {getDynamicPackages(report.metrics, lang).map((pkg, i) => (
-                                        <div key={i} className={`bg-slate-950 border p-6 rounded-xl flex flex-col ${pkg.recommended ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'border-slate-800'}`}>
-                                            {pkg.highlight && (
-                                                <div className="bg-cyan-900/30 text-cyan-400 text-[10px] font-bold uppercase px-2 py-1 rounded w-fit mb-2">
-                                                    {pkg.highlight}
-                                                </div>
-                                            )}
-                                            <h4 className="font-bold text-white mb-2">{pkg.name}</h4>
-                                            <div className="text-xl font-bold text-slate-300 mb-4">{pkg.price}</div>
-                                            <ul className="space-y-2 mb-6 flex-1">
-                                                {pkg.features.map((f, idx) => (
-                                                    <li key={idx} className="text-xs text-slate-500 flex items-start gap-2">
-                                                        <CheckCircle className="w-3 h-3 text-cyan-800 mt-0.5"/> {f}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                </div>
-
-                 {/* LEGAL DISCLAIMER FOOTER */}
-                <div className="bg-slate-950 border-t border-slate-800 p-6">
-                    <div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-lg flex gap-4 items-start">
-                        <Scale className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
-                        <div>
-                            <h4 className="text-amber-500 text-xs font-bold uppercase mb-1">{t.legalTitle}</h4>
-                            <p className="text-slate-400 text-[10px] md:text-xs leading-relaxed font-mono">
-                                {t.legalText}
-                            </p>
-                        </div>
+                        {activeTab === 'roi' && report && (
+                             <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center">
+                                 <h3 className="text-2xl font-bold text-white mb-8">Financial Impact Projection</h3>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                                     <div className="p-6 bg-red-950/20 border border-red-900/50 rounded-xl">
+                                         <div className="text-red-400 text-sm uppercase tracking-wider mb-2">Annual Leakage</div>
+                                         <div className="text-4xl font-bold text-white">{report.roiProjection.estimatedAnnualRevenueLeakage}</div>
+                                         <div className="text-xs text-red-300/70 mt-2">Estimated revenue lost to competitors</div>
+                                     </div>
+                                     <div className="p-6 bg-green-950/20 border border-green-900/50 rounded-xl">
+                                         <div className="text-green-400 text-sm uppercase tracking-wider mb-2">Recovery Potential</div>
+                                         <div className="text-4xl font-bold text-white">{report.roiProjection.potentialRecoveryWithAI}</div>
+                                         <div className="text-xs text-green-300/70 mt-2">With full AI integration</div>
+                                     </div>
+                                     <div className="p-6 bg-blue-950/20 border border-blue-900/50 rounded-xl">
+                                         <div className="text-blue-400 text-sm uppercase tracking-wider mb-2">Time to Impact</div>
+                                         <div className="text-4xl font-bold text-white">{report.roiProjection.timeToImpactMonths} <span className="text-lg font-normal text-slate-400">months</span></div>
+                                         <div className="text-xs text-blue-300/70 mt-2">Break-even point</div>
+                                     </div>
+                                 </div>
+                                 <div className="text-left bg-slate-950 p-6 rounded-lg border border-slate-800">
+                                     <h4 className="font-bold text-white mb-2">Analyst Note</h4>
+                                     <p className="text-slate-400 text-sm leading-relaxed">{report.roiProjection.narrative}</p>
+                                 </div>
+                             </div>
+                        )}
                     </div>
                 </div>
+            )}
+        </main>
 
-            </div>
-
-            {/* Eidosense Footer Form */}
-            <div className="mt-12 border-t border-slate-800 pt-8 text-center md:text-left">
-                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 className="text-lg font-bold text-white mb-2">Turn this Audit into Action.</h3>
-                        <p className="text-slate-400 text-sm mb-4">
-                            Stop analyzing and start transforming. Book a strategic intervention with Eidosense.
-                        </p>
-                        <div className="text-xs text-slate-500 font-mono">
-                            <p>arya@eidosense.com</p>
-                            <p>+382-68-753-688</p>
-                        </div>
-                    </div>
-                    <div>
-                        <form className="flex flex-col gap-3">
-                            <input type="email" placeholder="Your professional email" className="bg-slate-900 border border-slate-700 rounded p-3 text-sm text-white focus:border-cyan-500 outline-none" />
-                            <button type="button" className="bg-white text-slate-900 font-bold p-3 rounded hover:bg-slate-200 transition-colors uppercase text-sm">
-                                Request Full Proposal
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                <div className="text-center mt-12 text-[10px] text-slate-700 uppercase tracking-widest">
-                    © 2025 Eidosense D.O.O. All Rights Reserved.
-                </div>
-            </div>
-
-          </div>
-        )}
-      </main>
-
-      {/* MODALS & OVERLAYS */}
-      {report && (
-        <BoardBriefingModal
-          isOpen={isBriefingModalOpen}
-          onClose={() => setIsBriefingModalOpen(false)}
-          auditMetrics={report.metrics}
-          locale={lang}
-          onGenerate={handleBriefingGenerate}
+        {/* Modal */}
+        <BoardBriefingModal 
+            isOpen={isBriefingModalOpen}
+            onClose={() => setIsBriefingModalOpen(false)}
+            auditMetrics={auditMetrics}
+            locale={lang}
+            onGenerate={handleBriefingGenerate}
         />
-      )}
 
-      {/* Briefing Result Display Overlay */}
-      {briefingContent && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-            <div className="bg-slate-50 text-slate-900 max-w-3xl w-full max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl flex flex-col">
-                <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-white sticky top-0 z-10">
-                     <div className="flex items-center gap-3">
-                        <Briefcase className="w-6 h-6 text-slate-700"/>
-                        <h2 className="text-xl font-bold font-serif text-slate-900">Confidential Board Briefing</h2>
-                     </div>
-                     <button onClick={() => setBriefingContent(null)} className="text-slate-500 hover:text-slate-900 transition">
-                        <X className="w-6 h-6"/>
-                     </button>
-                </div>
-                <div className="p-8 bg-white flex-grow font-serif text-base leading-relaxed text-slate-800 whitespace-pre-wrap">
-                    {briefingContent}
-                </div>
-                 <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-4 print:hidden sticky bottom-0">
-                    <button onClick={() => {navigator.clipboard.writeText(briefingContent); alert('Copied to clipboard');}} className="px-4 py-2 border border-slate-300 rounded hover:bg-white transition flex items-center gap-2 text-sm font-semibold text-slate-700">
-                        <Copy className="w-4 h-4"/> Copy Text
-                    </button>
-                    <button onClick={() => window.print()} className="px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 transition flex items-center gap-2 text-sm font-semibold shadow-lg">
-                        <FileText className="w-4 h-4"/> Print / PDF
-                    </button>
+        {/* Contact / Plan Selection Modal */}
+        <ContactModal
+            isOpen={isContactModalOpen}
+            onClose={() => setIsContactModalOpen(false)}
+            selectedPackage={selectedPackage}
+            locale={lang}
+        />
+        
+        {/* Generated Briefing Overlay (Simple) */}
+        {briefingContent && (
+            <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
+                <div className="bg-white text-slate-900 max-w-3xl w-full max-h-[85vh] rounded-lg flex flex-col shadow-2xl">
+                    <div className="p-4 border-b flex justify-between items-center bg-slate-100 rounded-t-lg">
+                        <h3 className="font-bold text-lg flex items-center gap-2"><FileText className="w-5 h-5" /> Generated Board Briefing</h3>
+                        <button onClick={() => setBriefingContent(null)} className="hover:bg-slate-200 p-1 rounded"><X /></button>
+                    </div>
+                    <div className="p-8 overflow-y-auto font-serif whitespace-pre-line leading-relaxed">
+                        {briefingContent}
+                    </div>
+                    <div className="p-4 border-t bg-slate-50 flex justify-end gap-2 rounded-b-lg">
+                        <button 
+                            onClick={() => {navigator.clipboard.writeText(briefingContent); alert('Copied to clipboard!');}}
+                            className="px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 flex items-center gap-2"
+                        >
+                            <Copy className="w-4 h-4" /> Copy Text
+                        </button>
+                        <button 
+                            onClick={() => setBriefingContent(null)}
+                            className="px-4 py-2 border border-slate-300 rounded hover:bg-slate-200"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-      )}
-
+        )}
     </div>
   );
 };
-
-// --- SUB COMPONENTS ---
-
-const MetricCard = ({ label, value, color, icon }: any) => (
-    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
-        <div className="flex items-center gap-2 mb-2 text-slate-500 text-xs uppercase">
-            {icon} {label}
-        </div>
-        <div className={`text-lg font-bold ${color}`}>{value}</div>
-    </div>
-);
-
-const ProgressBar = ({ label, value, color }: any) => (
-    <div>
-        <div className="flex justify-between text-xs text-slate-400 mb-1">
-            <span>{label}</span>
-            <span>{value}%</span>
-        </div>
-        <div className="h-2 bg-slate-900 rounded-full overflow-hidden">
-            <div className={`h-full ${color}`} style={{ width: `${value}%` }}></div>
-        </div>
-    </div>
-);
-
-const RiskCard = ({ title, level, score, isInverse }: any) => {
-    let color = 'text-slate-500';
-    if (level) {
-        if (level === 'High') color = 'text-red-500';
-        else if (level === 'Medium') color = 'text-orange-500';
-        else color = 'text-emerald-500';
-    } else if (score !== undefined) {
-        // If isInverse, High score = High Risk (Red)
-        // If normal, High score = Good (Green) - Wait, logic check:
-        // Leadership Alignment: High is Good (Green).
-        // Talent Gap: High is Bad (Red).
-        if (isInverse) {
-             // High score is Bad
-             if (score > 60) color = 'text-red-500';
-             else if (score > 30) color = 'text-orange-500';
-             else color = 'text-emerald-500';
-        } else {
-             // High score is Good
-             if (score > 70) color = 'text-emerald-500';
-             else if (score > 40) color = 'text-orange-500';
-             else color = 'text-red-500';
-        }
-    }
-
-    return (
-        <div className="bg-slate-950 p-4 rounded border border-slate-800 text-center">
-            <div className="text-xs text-slate-500 uppercase mb-2">{title}</div>
-            <div className={`text-xl font-bold ${color}`}>
-                {level || `${score}/100`}
-            </div>
-        </div>
-    );
-};
-
-export default App;

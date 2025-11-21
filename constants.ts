@@ -1,4 +1,5 @@
 
+
 import { Language, Package, TranslationKey, AuditMetrics } from './types';
 
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
@@ -37,6 +38,20 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     you: "The Target",
     poweredBy: "Strategy & Intelligence by Eidosense",
     
+    // UI Elements
+    selectPlan: "Select Plan",
+    recommended: "Recommended",
+    threatLevel: "Threat Level",
+    
+    // Dynamic Sentences (Use {placeholders} manually in code if needed, or split strings)
+    outperformingPre: "Outperforming you by",
+    outperformingPost: "reviews.",
+    noBenchmark: "No direct benchmark detected.",
+    
+    threatDesc1: "Your digital footprint is currently",
+    threatDesc2: "This means you are losing traffic to",
+    threatDesc3: "daily.",
+
     // New Metrics
     digitalAuthority: "Domain Authority",
     influencerImpact: "Influencer Impact",
@@ -53,49 +68,63 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   [Language.ME]: {
     title: "Eidosense Visibility X-Ray",
     subtitle: "AI Transformacija i Digitalna Dijagnostika",
-    startAudit: "Nova Analiza",
-    businessDetails: "Pronađeni Podaci",
+    startAudit: "Nova Revizija",
+    businessDetails: "Detektovani Podaci",
     score: "Indeks Vidljivosti",
     findings: "Ključni Nalazi",
     opportunities: "Propuštene Prilike",
     solutions: "Strateška Rješenja",
-    contact: "Sljedeći Koraci",
+    contact: "Naredni Koraci",
     packages: "Paketi Optimizacije",
-    generateReport: "Generiši Plan Transformacije",
-    analyzing: "Skeniram Digitalni Otisak...",
-    analyzingCompetitors: "Procjena Gubitka Prihoda...",
-    critical: "Fatalne Greške",
-    good: "Jake Strane",
+    generateReport: "Generiši Izvještaj o Transformaciji",
+    analyzing: "Analiza Digitalnog Otiska...",
+    analyzingCompetitors: "Procjena Gubitka Tržišnog Udjela...",
+    critical: "Kritične Greške",
+    good: "Pozitivni Indikatori",
     reportTitle: "Konzola za AI Transformaciju",
-    benchmark: "Tržišni Lider (Alpha)",
+    benchmark: "Tržišni Lider (Benchmark)",
     competitors: "Lokalna Konkurencija",
-    contactCta: "Ne gubite više novac. Reagujte odmah.",
-    levelInvisible: "NEVIDLJIV (DIGITALNA SMRT)",
+    contactCta: "Zaustavite odliv prihoda. Reagujte odmah.",
+    levelInvisible: "NEVIDLJIV (DIGITALNI MRAK)",
     levelWeak: "SLAB (RANJIV)",
     levelVisible: "VIDLJIV (PROSJEK)",
     levelHigh: "DOMINANTAN",
     searchPlaceholder: "Unesite naziv biznisa...",
     searchButton: "Skeniraj",
-    searching: "Infiltracija u Google Mape...",
-    searchError: "Nismo vas pronašli. Postojite li uopšte na mapi?",
+    searching: "Pristup Google Mapama...",
+    searchError: "Biznis nije pronađen. Da li je lokacija verifikovana?",
     autoFilled: "Meta Locirana.",
-    manualOverride: "Protokol Odbrane",
-    gapDetected: "Uočen Jaz u Dominaciji",
-    marketLeader: "Lider (Alpha)",
-    you: "Vaš Biznis (Meta)",
+    manualOverride: "Ručni Unos",
+    gapDetected: "Detektovan Jaz u Dominaciji",
+    marketLeader: "Lider Kategorije",
+    you: "Vaš Biznis",
     poweredBy: "Strategy & Intelligence by Eidosense",
+
+    // UI Elements
+    selectPlan: "Odaberi Paket",
+    recommended: "Preporučeno",
+    threatLevel: "Nivo Opasnosti",
+
+    // Dynamic Sentences
+    outperformingPre: "Bolji od vas za",
+    outperformingPost: "recenzija.",
+    noBenchmark: "Direktan konkurent nije detektovan.",
+
+    threatDesc1: "Vaš digitalni otisak je trenutno",
+    threatDesc2: "To znači da svakodnevno gubite promet u korist",
+    threatDesc3: ".",
 
     // New Metrics
     digitalAuthority: "Autoritet Domena",
     influencerImpact: "Uticaj Influensera",
-    backlinkStatus: "Backlink Ekosistem",
-    prStatus: "Mediji i Pominjanja",
-    searchVolume: "Obim Pretrage",
+    backlinkStatus: "Backlink Profil",
+    prStatus: "Medijska Prisutnost",
+    searchVolume: "Volumen Pretrage",
     brandMentions: "Pominjanja Brenda",
 
     // Legal / Disclaimer
-    legalTitle: "ODRICANJE OD ODGOVORNOSTI I OGRANIČENJA ALGORITMA",
-    legalText: "Ovaj izvještaj predstavlja automatizovani presjek stanja na osnovu javno dostupnih digitalnih signala u trenutku skeniranja. Oznaka 'Nije detektovano' ne potvrđuje nepostojanje, već nevidljivost za standardne pretraživače. Ukoliko posjedujete resurse (npr. Instagram) koji nisu prepoznati, to ukazuje na kritično lošu indeksaciju ili SEO. Eidosense ne preuzima odgovornost za eventualna odstupanja u podacima. Izvještaj služi isključivo u svrhe strateške simulacije.",
+    legalTitle: "PRAVNO ODRICANJE I OGRANIČENJA ALGORITMA",
+    legalText: "Ovaj izvještaj predstavlja automatizovani presjek stanja zasnovan na javno dostupnim digitalnim signalima u trenutku skeniranja. Oznaka 'Nije Detektovano' ne potvrđuje nepostojanje, već nevidljivost za standardne pretraživače. Ukoliko posjedujete resurse (npr. Instagram) koji nisu prepoznati, to ukazuje na kritično lošu indeksaciju ili SEO. Eidosense ne preuzima odgovornost za eventualna odstupanja u podacima. Izvještaj služi isključivo u svrhe strateške simulacije.",
     notDetected: "Nije Detektovano / Loša Indeksacija"
   },
   [Language.TR]: {
@@ -133,6 +162,20 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     you: "Hedef (Siz)",
     poweredBy: "Strategy & Intelligence by Eidosense",
 
+    // UI Elements
+    selectPlan: "Paketi Seç",
+    recommended: "Önerilen",
+    threatLevel: "Tehdit Seviyesi",
+
+    // Dynamic Sentences
+    outperformingPre: "Sizden",
+    outperformingPost: "yorum daha önde.",
+    noBenchmark: "Doğrudan rakip tespit edilemedi.",
+
+    threatDesc1: "Dijital ayak iziniz şu anda",
+    threatDesc2: "Bu, trafiği her gün",
+    threatDesc3: "tarafına kaptırdığınız anlamına gelir.",
+
     // New Metrics
     digitalAuthority: "Domain Otoritesi",
     influencerImpact: "Influencer Etkisi",
@@ -146,6 +189,27 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     legalText: "Bu denetim, tarama anında AI tarafından tespit edilebilen halka açık dijital sinyallere dayalı otomatik bir anlık görüntüdür. 'Tespit Edilemedi' ifadesi, varlığın olmadığını değil, standart arama motorları tarafından görülemediğini (görünmez olduğunu) doğrular. Tespit edilemeyen varlıklarınız (örn. Instagram) varsa, SEO/İndeksleme puanınız kritik derecede düşüktür. Eidosense veri uyuşmazlıklarından sorumlu değildir. Bu rapor yalnızca stratejik simülasyon amaçlıdır.",
     notDetected: "Tespit Edilemedi / Düşük İndeks"
   }
+};
+
+export const LEVEL_TRANSLATIONS: Record<Language, Record<string, string>> = {
+    [Language.EN]: {
+        'Invisible': 'invisible',
+        'Weak': 'weak',
+        'Visible': 'visible',
+        'Highly Visible': 'highly visible'
+    },
+    [Language.ME]: {
+        'Invisible': 'nevidljiv',
+        'Weak': 'slab',
+        'Visible': 'vidljiv',
+        'Highly Visible': 'visoko vidljiv'
+    },
+    [Language.TR]: {
+        'Invisible': 'görünmez',
+        'Weak': 'zayıf',
+        'Visible': 'görünür',
+        'Highly Visible': 'yüksek görünürlükte'
+    }
 };
 
 // NOTE: Actual packages are now generated dynamically in App.tsx based on metrics

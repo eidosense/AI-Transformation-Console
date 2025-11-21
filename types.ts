@@ -1,4 +1,5 @@
 
+
 export enum Language {
   EN = 'en',
   ME = 'me',
@@ -124,6 +125,13 @@ export interface BoardBriefingModalProps {
   auditMetrics: AuditMetrics;
   locale: 'en' | 'me' | 'tr';
   onGenerate: (formData: BoardBriefingFormData) => void;
+}
+
+export interface ContactModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedPackage: Package | null;
+  locale: 'en' | 'me' | 'tr';
 }
 
 export type TranslationKey = 

@@ -1,5 +1,7 @@
 {
   "name": "Eidosense Visibility X-Ray",
   "description": "A digital visibility auditing tool for Montenegro businesses. Generates professional visibility health reports with scoring and AI-driven insights.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

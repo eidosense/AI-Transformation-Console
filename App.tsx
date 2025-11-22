@@ -394,76 +394,106 @@ export const App: React.FC = () => {
                     )}
 
                     {searchStatus === 'success' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            {/* Results Card */}
-                            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                                <div className="p-6 border-b border-slate-800 flex justify-between items-start">
-                                    <div>
-                                        <div className="text-xs font-mono text-cyan-500 mb-1">{t.autoFilled}</div>
-                                        <h2 className="text-2xl font-bold text-white">{auditMetrics.businessName}</h2>
-                                        <p className="text-slate-400 text-sm">{auditMetrics.address}</p>
-                                    </div>
-                                    <div className="text-right">
-                                         <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t.score}</div>
-                                         <div className="text-3xl font-bold text-white">{calculateScore(auditMetrics)}<span className="text-sm text-slate-500">/100</span></div>
-                                    </div>
+                        <>
+                          {auditMetrics.businessName === 'EIDOSENSE_PARADOX' ? (
+                             <div className="bg-slate-900 border border-cyan-500/30 rounded-xl p-12 text-center space-y-6 animate-in zoom-in duration-500">
+                                <div className="w-24 h-24 bg-cyan-950 rounded-full flex items-center justify-center mx-auto border border-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.4)]">
+                                     <Brain className="w-12 h-12 text-cyan-400 animate-pulse" />
                                 </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2">
-                                    <div className="p-6 border-b md:border-b-0 md:border-r border-slate-800 flex items-center justify-center bg-slate-950/50">
-                                        <ScoreGauge score={calculateScore(auditMetrics)} />
-                                    </div>
-                                    <div className="p-6 h-64">
-                                        <MapVisualizer 
-                                            targetLocation={auditMetrics.location}
-                                            competitorLocation={auditMetrics.benchmark?.location}
-                                            targetName={auditMetrics.businessName}
-                                            competitorName={auditMetrics.benchmark?.name}
-                                        />
-                                    </div>
+                                <h2 className="text-3xl font-bold text-white tracking-widest uppercase">System Paradox</h2>
+                                <p className="text-xl text-cyan-400 font-mono">
+                                    {lang === 'tr' ? "Kendi kendini analiz edemezsin. Evren çökebilir. :)" : 
+                                     lang === 'me' ? "Ne možete analizirati analizatora. Univerzum bi mogao kolabirati. :)" :
+                                     "You cannot X-Ray the X-Ray machine. Nice try."}
+                                </p>
+                                <div className="p-4 bg-slate-950 rounded border border-slate-800 font-mono text-xs text-slate-500">
+                                    ERROR_CODE: RECURSIVE_AUDIT_ATTEMPT<br/>
+                                    STATUS: BLOCKED_BY_ADMIN<br/>
+                                    SOLUTION: SCAN_A_REAL_CLIENT
                                 </div>
-
-                                {/* Quick Metrics Grid */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-slate-800 border-t border-slate-800">
-                                    <div className="p-4 text-center">
-                                        <div className="text-xs text-slate-500 mb-1">Google Maps</div>
-                                        <div className={`font-bold ${auditMetrics.isClaimed === 'yes' ? 'text-green-400' : 'text-red-400'}`}>
-                                            {auditMetrics.isClaimed === 'yes' ? 'Claimed' : 'Unclaimed'}
+                                <button 
+                                    onClick={() => {
+                                        setSearchStatus('idle');
+                                        setSearchQuery('');
+                                    }}
+                                    className="text-slate-400 hover:text-white underline"
+                                >
+                                    Reset System
+                                </button>
+                             </div>
+                          ) : (
+                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                {/* Results Card */}
+                                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                                    <div className="p-6 border-b border-slate-800 flex justify-between items-start">
+                                        <div>
+                                            <div className="text-xs font-mono text-cyan-500 mb-1">{t.autoFilled}</div>
+                                            <h2 className="text-2xl font-bold text-white">{auditMetrics.businessName}</h2>
+                                            <p className="text-slate-400 text-sm">{auditMetrics.address}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t.score}</div>
+                                            <div className="text-3xl font-bold text-white">{calculateScore(auditMetrics)}<span className="text-sm text-slate-500">/100</span></div>
                                         </div>
                                     </div>
-                                    <div className="p-4 text-center">
-                                        <div className="text-xs text-slate-500 mb-1">Reviews</div>
-                                        <div className="font-bold text-white">{auditMetrics.reviewCount} <span className="text-xs text-slate-500">({auditMetrics.reviewRating}★)</span></div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2">
+                                        <div className="p-6 border-b md:border-b-0 md:border-r border-slate-800 flex items-center justify-center bg-slate-950/50">
+                                            <ScoreGauge score={calculateScore(auditMetrics)} />
+                                        </div>
+                                        <div className="p-6 h-64">
+                                            <MapVisualizer 
+                                                targetLocation={auditMetrics.location}
+                                                competitorLocation={auditMetrics.benchmark?.location}
+                                                targetName={auditMetrics.businessName}
+                                                competitorName={auditMetrics.benchmark?.name}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="p-4 text-center">
-                                        <div className="text-xs text-slate-500 mb-1">Photos</div>
-                                        <div className="font-bold text-white">{auditMetrics.photoCount}</div>
-                                    </div>
-                                    <div className="p-4 text-center">
-                                        <div className="text-xs text-slate-500 mb-1">Competitor</div>
-                                        <div className="font-bold text-red-400 truncate px-2">{auditMetrics.benchmark?.name || 'Unknown'}</div>
+
+                                    {/* Quick Metrics Grid */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-slate-800 border-t border-slate-800">
+                                        <div className="p-4 text-center">
+                                            <div className="text-xs text-slate-500 mb-1">Google Maps</div>
+                                            <div className={`font-bold ${auditMetrics.isClaimed === 'yes' ? 'text-green-400' : 'text-red-400'}`}>
+                                                {auditMetrics.isClaimed === 'yes' ? 'Claimed' : 'Unclaimed'}
+                                            </div>
+                                        </div>
+                                        <div className="p-4 text-center">
+                                            <div className="text-xs text-slate-500 mb-1">Reviews</div>
+                                            <div className="font-bold text-white">{auditMetrics.reviewCount} <span className="text-xs text-slate-500">({auditMetrics.reviewRating}★)</span></div>
+                                        </div>
+                                        <div className="p-4 text-center">
+                                            <div className="text-xs text-slate-500 mb-1">Photos</div>
+                                            <div className="font-bold text-white">{auditMetrics.photoCount}</div>
+                                        </div>
+                                        <div className="p-4 text-center">
+                                            <div className="text-xs text-slate-500 mb-1">Competitor</div>
+                                            <div className="font-bold text-red-400 truncate px-2">{auditMetrics.benchmark?.name || 'Unknown'}</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <button 
-                                onClick={handleGenerateReport}
-                                disabled={isGenerating}
-                                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-cyan-900/20 transition-all transform hover:scale-[1.01] disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3"
-                            >
-                                {isGenerating ? (
-                                    <>
-                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        {loadingText}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Brain className="w-6 h-6" />
-                                        {t.generateReport}
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                                <button 
+                                    onClick={handleGenerateReport}
+                                    disabled={isGenerating}
+                                    className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-cyan-900/20 transition-all transform hover:scale-[1.01] disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            {loadingText}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Brain className="w-6 h-6" />
+                                            {t.generateReport}
+                                        </>
+                                    )}
+                                </button>
+                             </div>
+                          )}
+                        </>
                     )}
                 </div>
             ) : (

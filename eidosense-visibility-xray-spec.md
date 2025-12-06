@@ -1,6 +1,6 @@
-# Eidosense Visibility X-Ray — Montenegro Business Visibility & AI Transformation Console
+# Eidosense ShadowRank — Montenegro Business Visibility & AI Transformation Console
 
-**Version:** 2.5.1 (Legal/Liability Update)  
+**Version:** 3.0 (Rebrand: ShadowRank)  
 **Domain:** Digital Audit, AI Transformation, Strategic Intelligence  
 **Region:** Montenegro (Primary), Balkans (Secondary)
 
@@ -9,7 +9,7 @@
 ## 1. Overview
 
 ### 1.1 Concept
-**Eidosense Visibility X-Ray** is a "brutally honest" digital audit console designed for businesses in Montenegro. Unlike standard SEO tools that offer generic advice, Eidosense acts as a **strategic diagnostic engine**. It compares a specific target business against the **Market Leader (Benchmark)** in the same city and category, revealing not just "errors" but **revenue leakage** and **dominance gaps**.
+**Eidosense ShadowRank** is a "brutally honest" digital audit console designed for businesses in Montenegro. Unlike standard SEO tools that offer generic advice, ShadowRank acts as a **strategic diagnostic engine**. It compares a specific target business against the **Market Leader (Benchmark)** in the same city and category, revealing not just "errors" but **revenue leakage** and **dominance gaps**.
 
 ### 1.2 Core Value Proposition
 The application transforms fragmented digital signals—Google Maps data, reviews, visual aesthetics, and (in advanced tiers) official financial/registry data—into a coherent **Board-Level Threat Assessment**.
@@ -20,7 +20,7 @@ It answers three critical questions for the user:
 3. **How much is this costing you?** (Financial framing of digital incompetence).
 
 ### 1.3 AI Persona & Tone
-The AI engine behind the console is the **"Eidosense Chief Auditor & AI Transformation Architect (Dark Growth Strategy)"**.
+The AI engine behind the console is the **"Eidosense Chief Auditor & AI Transformation Architect (ShadowRank Strategy)"**.
 
 *   **Tone:** Intimidating, clinical, brutally honest, financially focused.
 *   **Style:** "Dark Mode" consulting. No emojis, no "Good job!", no marketing fluff.
@@ -39,7 +39,7 @@ The AI engine behind the console is the **"Eidosense Chief Auditor & AI Transfor
 
 ### 2.2 AI & Intelligence Layer
 *   **Provider:** Google Gemini API (`@google/genai`).
-*   **Model:** `gemini-2.5-flash` (optimized for low latency and grounding).
+*   **Model:** `gemini-3-pro-preview` (Upgraded for high-level reasoning).
 *   **Tools:**
     *   `googleMaps`: For grounding business data and finding competitors.
     *   `googleSearch`: For grounding brand mentions, news, and broader context.

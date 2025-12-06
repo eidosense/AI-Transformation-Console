@@ -142,7 +142,8 @@ export type TranslationKey =
 
 export interface Package {
   name: string;
-  price: string;
+  price?: string; // Made optional as we are moving to inquiry model
+  billingPeriod: 'one-time' | 'monthly' | 'annual';
   features: string[];
   recommended?: boolean;
   highlight?: string;

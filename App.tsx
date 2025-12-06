@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { Activity, AlertTriangle, CheckCircle, Share2, LayoutDashboard, Search, ChevronRight, AlertOctagon, MapPin, Zap, TrendingUp, Target, Lock, Globe, Link as LinkIcon, Megaphone, Brain, Database, Users, ShieldAlert, Briefcase, ArrowUpRight, BarChart3, PieChart, FileText, Copy, X, ExternalLink, Phone, Instagram, MessageCircle, Box, Scale } from 'lucide-react';
 import { generateAIAnalysis, searchBusinessOnMaps, generateBoardBriefing } from './services/geminiService';
@@ -48,138 +50,76 @@ export const App: React.FC = () => {
       }
   }, []);
 
-  // --- DYNAMIC PACKAGE GENERATION ---
+  // --- DYNAMIC PACKAGE GENERATION (PRODUCTIZED SERVICES) ---
   const getDynamicPackages = (metrics: AuditMetrics, lang: Language): Package[] => {
      const packages: Package[] = [];
 
-     // 1. BASE PACKAGE (Always needed if unclaimed or bad NAP)
+     // 1. IDENTITY LOCK PROTOCOL (Automated Claiming + Data Fix)
      if (metrics.isClaimed !== 'yes' || metrics.napConsistent === false) {
          const titles = {
-             en: "Survival Kit", me: "Paket za Opstanak", tr: "Hayatta Kalma Kiti"
+             en: "Identity Lock Protocol", me: "Identity Lock Protokol", tr: "Kimlik Kilit Protokolü"
          };
          const features = {
-             en: ["Google Business Claim", "NAP Cleaning", "Stop Being Invisible"],
-             me: ["Verifikacija Vlasništva (GMB)", "Usklađivanje Podataka (NAP)", "Izlazak iz Digitalnog Mraka"],
-             tr: ["Google Harita Sahiplenme", "Veri Temizliği", "Görünmezlikten Kurtul"]
+             en: ["Automated GMB Verification", "Anti-Hijack Protection", "Data Consistency Sync", "One-Time Deployment"],
+             me: ["Automatska GMB Verifikacija", "Zaštita od Preuzimanja", "Sinhronizacija Podataka", "Jednokratna Aktivacija"],
+             tr: ["Otomatik GMB Doğrulama", "Çalma Koruması", "Veri Eşitleme", "Tek Seferlik Kurulum"]
          };
          packages.push({
              name: titles[lang],
-             price: "€49",
+             billingPeriod: 'one-time',
              features: features[lang]
          });
      }
 
-     // 2. 360 TOUR (Based on Venue Size)
+     // 2. 360 DIGITAL TWIN (Digital Asset Purchase)
      if (metrics.has360 !== 'professional') {
-        let price = "";
-        let m2Text = "";
-        let venueSizeME = metrics.venueSize as string;
-
-        if (lang === 'me') {
-            venueSizeME = {
-                'Small': 'Mali (<50m²)',
-                'Medium': 'Srednji (50-150m²)',
-                'Large': 'Veliki (150-300m²)',
-                'Huge': 'XXL (300m²+)'
-            }[metrics.venueSize] || metrics.venueSize;
-        }
-        
-        // Pricing Logic based on inferred venue size
-        if (metrics.venueSize === 'Small') {
-            price = "€150"; // Flat rate for small
-            m2Text = lang === 'tr' ? "< 50m² Stüdyo" : "< 50m² Studio";
-        } else if (metrics.venueSize === 'Medium') {
-            price = "€350"; // Flat rate for medium
-            m2Text = lang === 'tr' ? "50-150m² Mağaza/Restoran" : "50-150m² Shop/Restaurant";
-        } else if (metrics.venueSize === 'Large') {
-            price = lang === 'tr' ? "€2.00/m²" : "€2.00/m²"; // Per sqm
-            m2Text = lang === 'tr' ? "150m²+ Otel/Showroom" : "150m²+ Hotel/Showroom";
-        } else {
-            price = lang === 'tr' ? "Özel Teklif" : "Custom Quote";
-            m2Text = lang === 'tr' ? "Devasa Alanlar" : "Huge Venues";
-        }
-
         const titles = {
-            en: "360° Digital Twin", me: "360° Digitalni Blizanac", tr: "360° Dijital İkiz"
+            en: "360° Digital Asset", me: "360° Digitalna Imovina", tr: "360° Dijital Varlık"
         };
         const features = {
-            en: ["Google Street View Trusted", `Pricing for ${metrics.venueSize} Venue`, "VR Hosting Included", "Conversion Boost (+30%)"],
-            me: ["Google Street View Sertifikat", `Cijena za: ${venueSizeME}`, "Uključen VR Hosting", "Rast Konverzije (+30%)"],
-            tr: ["Google Street View Onaylı", `${m2Text} İçin Fiyat`, "VR Barındırma Dahil", "Dönüşüm Artışı (+30%)"]
+            en: ["Google Street View Upload", "VR-Ready Asset Download", "Lifetime License", "Hosting Included"],
+            me: ["Google Street View Upload", "VR-Ready Fajlovi", "Doživotna Licenca", "Hosting Uključen"],
+            tr: ["Google Street View Yükleme", "VR Hazır Dosya", "Ömür Boyu Lisans", "Barındırma Dahil"]
         };
 
         packages.push({
             name: titles[lang],
-            price: price,
-            highlight: lang === 'tr' ? `m² Bazlı Teklif (${metrics.venueSize})` : (lang === 'me' ? `Ponuda za prostor: ${venueSizeME}` : `${metrics.venueSize} Venue Pricing`),
+            billingPeriod: 'one-time',
+            highlight: lang === 'tr' ? `Alan Tipi: ${metrics.venueSize}` : `Venue Class: ${metrics.venueSize}`,
             recommended: true,
             features: features[lang]
         });
      }
 
-     // 3. VISUAL IDENTITY (New - for missing professional photos)
-     if (!metrics.hasProfessionalPhotos || metrics.photoCount < 10) {
-         const titles = {
-             en: "Visual Identity Pack", me: "Vizuelni Identitet", tr: "Görsel Kimlik Paketi"
-         };
-         const features = {
-             en: ["Professional Photo Session", "Food/Interior Styling", "Google Maps Optimization", "15 High-Res Edits"],
-             me: ["Profesionalno Fotografisanje", "Stilizovanje Hrane/Enterijera", "Optimizacija za Google Mape", "15 Obrađenih Fotografija"],
-             tr: ["Profesyonel Fotoğraf Çekimi", "Yemek/İç Mekan Stili", "Google Harita Optimizasyonu", "15 Yüksek Çözünürlüklü Düzenleme"]
-         };
-         packages.push({
-             name: titles[lang],
-             price: "€250",
-             features: features[lang]
-         });
-     }
-
-     // 4. WEBSITE / DIGITAL PRESENCE
-     if (!metrics.hasWebsite) {
-         const titles = {
-             en: "Web Transformation", me: "Web Transformacija", tr: "Web Dönüşümü"
-         };
-         const features = {
-             en: ["High-Performance Next.js Site", "Direct Booking Engine", "SEO Foundation", "Mobile-First"],
-             me: ["High-Performance Sajt (Next.js)", "Sistem za Rezervacije", "SEO Optimizacija", "Mobile-First Dizajn"],
-             tr: ["Yüksek Performanslı Web Sitesi", "Direkt Rezervasyon Motoru", "SEO Temeli", "Mobil Öncelikli"]
-         };
-         packages.push({
-            name: titles[lang],
-            price: "€990",
-            features: features[lang]
-         });
-     }
-
-     // 5. SOCIAL & ADS (New - if website exists but social is weak)
+     // 3. AI CONTENT ENGINE (SaaS Subscription)
      if (metrics.hasWebsite && (!metrics.hasInstagram || !metrics.hasWhatsApp)) {
         const titles = {
-             en: "Social Accelerator", me: "Social Accelerator", tr: "Sosyal Hızlandırıcı"
+             en: "AI Content Engine", me: "AI Content Engine", tr: "AI İçerik Motoru"
          };
          const features = {
-             en: ["Instagram/Meta Business Setup", "WhatsApp Integration", "First Month Content Plan", "Ad Account Setup"],
-             me: ["Instagram/Meta Podešavanje", "WhatsApp Integracija", "Plan Sadržaja (1. Mjesec)", "Podešavanje Reklama"],
-             tr: ["Instagram/Meta Kurulumu", "WhatsApp Entegrasyonu", "İlk Ay İçerik Planı", "Reklam Hesabı Kurulumu"]
+             en: ["12 AI-Generated Posts/mo", "Automated Captioning", "Hashtag Optimization", "Monthly Asset Delivery"],
+             me: ["12 AI Generisanih Postova/mj", "Automatski Opisi", "Hashtag Optimizacija", "Mjesečna Isporuka"],
+             tr: ["Ayda 12 AI Gönderisi", "Otomatik Altyazı", "Hashtag Optimizasyonu", "Aylık Teslimat"]
          };
          packages.push({
             name: titles[lang],
-            price: "€299",
+            billingPeriod: 'monthly',
             features: features[lang]
          });
      }
 
-     // 6. MARKET DOMINANCE (Always available as upsell)
+     // 4. SHADOWRANK PRO (SaaS Dashboard Access)
      const domTitles = {
-         en: "Market Dominator", me: "Tržišna Dominacija", tr: "Pazar Hükümdarı"
+         en: "ShadowRank Pro", me: "ShadowRank Pro", tr: "ShadowRank Pro"
      };
      const domFeatures = {
-         en: ["Aggressive Ad Ops", "Reputation Defense", "Influencer Outreach", "Full SEO & Backlink Strategy"],
-         me: ["Agresivno Oglašavanje (Ads)", "Upravljanje Reputacijom", "Influenser Marketing", "Sveobuhvatna SEO Strategija"],
-         tr: ["Agresif Reklam Yönetimi", "İtibar Savunması", "Influencer Ağı Erişimi", "Tam SEO ve Backlink Hakimiyeti"]
+         en: ["Real-time Competitor Alerts", "Weekly AI Reports", "Review Auto-Response Bot", "Dashboard Access"],
+         me: ["Real-time Konkurentski Alarmi", "Nedeljni AI Izvještaji", "Bot za Recenzije", "Pristup Dashboardu"],
+         tr: ["Gerçek Zamanlı Rakip Uyarıları", "Haftalık AI Raporu", "Otomatik Yorum Botu", "Panel Erişimi"]
      };
      packages.push({
          name: domTitles[lang],
-         price: "€349/mo",
+         billingPeriod: 'monthly',
          features: domFeatures[lang]
      });
 
@@ -328,7 +268,7 @@ export const App: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-cyan-400">
                     <Zap className="w-6 h-6" />
-                    <span className="font-bold tracking-wider">EIDOSENSE <span className="text-slate-500 text-xs font-normal">VISIBILITY X-RAY</span></span>
+                    <span className="font-bold tracking-wider">EIDOSENSE <span className="text-slate-500 text-xs font-normal">SHADOWRANK</span></span>
                 </div>
                 <div className="flex gap-2">
                     {(['en', 'me', 'tr'] as Language[]).map((l) => (
@@ -429,7 +369,14 @@ export const App: React.FC = () => {
                                         <div>
                                             <div className="text-xs font-mono text-cyan-500 mb-1">{t.autoFilled}</div>
                                             <h2 className="text-2xl font-bold text-white">{auditMetrics.businessName}</h2>
-                                            <p className="text-slate-400 text-sm">{auditMetrics.address}</p>
+                                            <div className="flex gap-2 items-center">
+                                              <p className="text-slate-400 text-sm">{auditMetrics.address}</p>
+                                              {auditMetrics.googleMapsUri && (
+                                                <a href={auditMetrics.googleMapsUri} target="_blank" rel="noopener noreferrer" className="text-cyan-500 hover:text-cyan-400" title="View on Google Maps">
+                                                  <ExternalLink className="w-3 h-3" />
+                                                </a>
+                                              )}
+                                            </div>
                                         </div>
                                         <div className="text-right">
                                             <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t.score}</div>
@@ -455,9 +402,16 @@ export const App: React.FC = () => {
                                     <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-slate-800 border-t border-slate-800">
                                         <div className="p-4 text-center">
                                             <div className="text-xs text-slate-500 mb-1">Google Maps</div>
-                                            <div className={`font-bold ${auditMetrics.isClaimed === 'yes' ? 'text-green-400' : 'text-red-400'}`}>
-                                                {auditMetrics.isClaimed === 'yes' ? 'Claimed' : 'Unclaimed'}
+                                            <div className={`font-bold flex justify-center items-center gap-1 ${
+                                                auditMetrics.isClaimed === 'yes' ? 'text-green-400' : 
+                                                auditMetrics.isClaimed === 'partial' ? 'text-orange-400' : 'text-red-400'
+                                            }`}>
+                                                {auditMetrics.isClaimed === 'yes' ? 'Claimed' : 
+                                                 auditMetrics.isClaimed === 'partial' ? 'Unverified' : 'Unclaimed'}
+                                                {auditMetrics.isClaimed === 'yes' && <CheckCircle className="w-3 h-3" />}
+                                                {auditMetrics.isClaimed === 'no' && <ShieldAlert className="w-3 h-3" />}
                                             </div>
+                                            {auditMetrics.claimStatusNotes && <div className="text-[10px] text-slate-500 mt-1">{auditMetrics.claimStatusNotes}</div>}
                                         </div>
                                         <div className="p-4 text-center">
                                             <div className="text-xs text-slate-500 mb-1">Reviews</div>
@@ -545,6 +499,75 @@ export const App: React.FC = () => {
                         {activeTab === 'visibility' && report && (
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <div className="lg:col-span-2 space-y-6">
+                                    {/* Digital Access Points Grid */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                      <div className={`p-4 rounded-lg border flex flex-col items-center justify-center text-center ${auditMetrics.hasWebsite ? 'bg-cyan-950/20 border-cyan-900 text-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                                        <Globe className="w-6 h-6 mb-2" />
+                                        <span className="text-xs font-bold">Website</span>
+                                        {auditMetrics.hasWebsite ? <CheckCircle className="w-3 h-3 mt-1" /> : <X className="w-3 h-3 mt-1" />}
+                                      </div>
+                                      <div className={`p-4 rounded-lg border flex flex-col items-center justify-center text-center ${auditMetrics.hasMenuOrBooking ? 'bg-cyan-950/20 border-cyan-900 text-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                                        <LinkIcon className="w-6 h-6 mb-2" />
+                                        <span className="text-xs font-bold">Menu/Book</span>
+                                        {auditMetrics.hasMenuOrBooking ? <CheckCircle className="w-3 h-3 mt-1" /> : <X className="w-3 h-3 mt-1" />}
+                                      </div>
+                                      <div className={`p-4 rounded-lg border flex flex-col items-center justify-center text-center ${auditMetrics.hasWhatsApp ? 'bg-green-950/20 border-green-900 text-green-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                                        <MessageCircle className="w-6 h-6 mb-2" />
+                                        <span className="text-xs font-bold">WhatsApp</span>
+                                        {auditMetrics.hasWhatsApp ? <CheckCircle className="w-3 h-3 mt-1" /> : <X className="w-3 h-3 mt-1" />}
+                                      </div>
+                                      <div className={`p-4 rounded-lg border flex flex-col items-center justify-center text-center ${auditMetrics.hasInstagram ? 'bg-pink-950/20 border-pink-900 text-pink-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                                        <Instagram className="w-6 h-6 mb-2" />
+                                        <span className="text-xs font-bold">Instagram</span>
+                                        {auditMetrics.hasInstagram ? <CheckCircle className="w-3 h-3 mt-1" /> : <X className="w-3 h-3 mt-1" />}
+                                      </div>
+                                    </div>
+
+                                    {/* 360 Analysis Panel (New) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                            <h4 className="text-xs uppercase text-slate-500 font-bold mb-4">{t.digitalAuthority}</h4>
+                                            <div className="flex items-center gap-3">
+                                                <Target className={`w-8 h-8 ${auditMetrics.backlinkAuthority === 'High' ? 'text-green-500' : 'text-slate-600'}`} />
+                                                <div>
+                                                    <div className="text-2xl font-bold text-white">{auditMetrics.backlinkAuthority}</div>
+                                                    <div className="text-xs text-slate-400">{t.backlinkStatus}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                            <h4 className="text-xs uppercase text-slate-500 font-bold mb-4">{t.influencerImpact}</h4>
+                                            <div className="flex items-center gap-3">
+                                                <Megaphone className={`w-8 h-8 ${auditMetrics.influencerImpact === 'Viral' ? 'text-purple-500' : 'text-slate-600'}`} />
+                                                <div>
+                                                    <div className="text-2xl font-bold text-white">{auditMetrics.influencerImpact}</div>
+                                                    <div className="text-xs text-slate-400">{t.prStatus}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* NEW: Search Volume & Brand Mentions */}
+                                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                            <h4 className="text-xs uppercase text-slate-500 font-bold mb-4">{t.searchVolume}</h4>
+                                            <div className="flex items-center gap-3">
+                                                <Search className={`w-8 h-8 ${auditMetrics.searchVolume === 'High' ? 'text-blue-500' : 'text-slate-600'}`} />
+                                                <div>
+                                                    <div className="text-2xl font-bold text-white">{auditMetrics.searchVolume}</div>
+                                                    <div className="text-xs text-slate-400">Monthly Interest</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                                            <h4 className="text-xs uppercase text-slate-500 font-bold mb-4">{t.brandMentions}</h4>
+                                            <div className="flex items-center gap-3">
+                                                <MessageCircle className={`w-8 h-8 ${auditMetrics.brandMentions === 'Viral' ? 'text-pink-500' : 'text-slate-600'}`} />
+                                                <div>
+                                                    <div className="text-2xl font-bold text-white">{auditMetrics.brandMentions}</div>
+                                                    <div className="text-xs text-slate-400">Social Listening</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
                                         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                                             <Activity className="w-5 h-5 text-cyan-500" />
@@ -567,9 +590,13 @@ export const App: React.FC = () => {
                                                     <div className="flex justify-between items-start mb-4">
                                                         <div>
                                                             <h4 className="font-bold text-lg text-white">{pkg.name}</h4>
+                                                            <div className="text-xs text-slate-500 mt-1 uppercase tracking-wide">
+                                                                {pkg.billingPeriod === 'monthly' ? (lang === 'tr' ? 'Önerilen Çözüm' : lang === 'me' ? 'Preporučeno Rješenje' : 'Suggested Solution') : 
+                                                                 pkg.billingPeriod === 'annual' ? (lang === 'tr' ? 'Yıllık Strateji' : lang === 'me' ? 'Godišnja Strategija' : 'Annual Strategy') : 
+                                                                 (lang === 'tr' ? 'Tek Seferlik' : lang === 'me' ? 'Jednokratno' : 'One-Time')}
+                                                            </div>
                                                             {pkg.highlight && <div className="text-xs text-cyan-400 mt-1">{pkg.highlight}</div>}
                                                         </div>
-                                                        <div className="text-xl font-mono font-bold text-white">{pkg.price}</div>
                                                     </div>
                                                     <ul className="space-y-2 mb-6 flex-1">
                                                         {pkg.features.map((f, i) => (
@@ -581,12 +608,25 @@ export const App: React.FC = () => {
                                                     </ul>
                                                     <button 
                                                         onClick={() => handleSelectPlan(pkg)}
-                                                        className={`w-full py-2 rounded font-bold transition-colors ${pkg.recommended ? 'bg-cyan-600 hover:bg-cyan-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                                                        className={`w-full py-3 rounded font-bold transition-colors uppercase tracking-wide text-sm ${pkg.recommended ? 'bg-cyan-600 hover:bg-cyan-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
                                                     >
                                                         {t.selectPlan}
                                                     </button>
                                                 </div>
                                             ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Liability Disclaimer */}
+                                    <div className="mt-8 border-t border-slate-800 pt-6 px-2">
+                                        <div className="flex items-start gap-3 opacity-60 hover:opacity-100 transition-opacity">
+                                            <ShieldAlert className="w-5 h-5 text-slate-500 shrink-0 mt-1" />
+                                            <div>
+                                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t.legalTitle}</h4>
+                                                <p className="text-[10px] text-slate-500 leading-relaxed max-w-2xl">
+                                                    {t.legalText}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -780,4 +820,4 @@ export const App: React.FC = () => {
         )}
     </div>
   );
-};
+}

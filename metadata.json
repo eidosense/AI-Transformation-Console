@@ -1,5 +1,5 @@
 {
-  "name": "Eidosense Visibility X-Ray",
+  "name": "Eidosense ShadowRank",
   "description": "A digital visibility auditing tool for Montenegro businesses. Generates professional visibility health reports with scoring and AI-driven insights.",
   "requestFramePermissions": [
     "geolocation"

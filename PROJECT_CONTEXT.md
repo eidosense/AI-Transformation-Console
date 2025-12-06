@@ -1,7 +1,7 @@
-# Eidosense Visibility X-Ray - AI Agent Context
+# Eidosense ShadowRank - AI Agent Context
 
 ## 1. Project Overview
-**Name:** Montenegro Business Visibility (Eidosense Visibility X-Ray)
+**Name:** Montenegro Business Visibility (Eidosense ShadowRank)
 **Domain:** Digital Audit & SEO/Visibility Tool for Businesses in Montenegro.
 **Core Value Proposition:** A "brutally honest" digital audit tool that compares a user's business against the market leader in their specific city and category using Google Gemini AI.
 
@@ -10,7 +10,7 @@
 - **Language:** TypeScript.
 - **Styling:** Tailwind CSS (Dark Mode / Cyber-Security Aesthetic).
 - **AI Provider:** Google Gemini API (`@google/genai` SDK).
-  - **Models:** `gemini-2.5-flash` (for fast mapping and analysis).
+  - **Models:** `gemini-2.5-flash` (for fast mapping and analysis) and `gemini-3-pro-preview` (for deep reasoning).
   - **Tools:** `googleMaps` (Grounding), `googleSearch` (Grounding).
 - **Visualization:** Recharts (Gauge), Google Maps JS API (MapVisualizer).
 - **Icons:** Lucide React.
@@ -31,7 +31,7 @@
 ### B. The Analysis Process (`handleGenerate`)
 1. **Scoring:** A deterministic score (0-100) is calculated based on "Hard Metrics" and "Inferred Metrics" (see Section 4).
 2. **AI Report Generation (`services/geminiService.ts` -> `generateAIAnalysis`):**
-   - **Persona:** "Eidosense Chief Auditor (Dark Growth Strategy)".
+   - **Persona:** "Eidosense Chief Strategy Officer (ShadowRank)".
    - **Tone:** Intimidating, brutally honest, financially focused (e.g., "Bleeding revenue").
    - **Task:**
      - Deep scan the specific Benchmark Competitor using `googleSearch` grounding.
@@ -72,7 +72,7 @@ The central state object. Key fields added for 360 analysis:
 
 ## 7. Visual Components
 - **`ScoreGauge`:** A donut chart visualizing the 0-100 score.
-- **`MapVisualizer`:** Renders a Google Map with custom dark styles.
+- **`MapVisualizer`:** Renders a Digital Radar visualization.
   - **Blue/Purple Marker:** The User (Target).
   - **Red Marker:** The Benchmark (Market Leader).
   - Used to visually demonstrate proximity and dominance gaps.

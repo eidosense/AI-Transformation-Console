@@ -4,16 +4,16 @@ import { Language, Package, TranslationKey, AuditMetrics } from './types';
 
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   [Language.EN]: {
-    title: "Eidosense Visibility X-Ray",
-    subtitle: "AI Transformation & Digital X-Ray",
+    title: "ShadowRank",
+    subtitle: "AI Transformation & Digital X-Ray by Eidosense",
     startAudit: "Start New Audit",
     businessDetails: "Live Data Detected",
     score: "Visibility Score",
     findings: "Critical Findings",
     opportunities: "Lost Opportunities",
-    solutions: "Strategic Solutions",
-    contact: "Next Steps",
-    packages: "Optimization Packages",
+    solutions: "Digital Solutions",
+    contact: "Activate Protocol",
+    packages: "Recommended Modules",
     generateReport: "Generate Transformation Roadmap",
     analyzing: "Scanning Digital & AI Footprint...",
     analyzingCompetitors: "Calculating Revenue Leakage...",
@@ -39,8 +39,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     poweredBy: "Strategy & Intelligence by Eidosense",
     
     // UI Elements
-    selectPlan: "Select Plan",
-    recommended: "Recommended",
+    selectPlan: "View Strategy",
+    recommended: "Strategic Fit",
     threatLevel: "Threat Level",
     
     // Dynamic Sentences (Use {placeholders} manually in code if needed, or split strings)
@@ -66,16 +66,16 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     notDetected: "Not Detected / Low Indexing"
   },
   [Language.ME]: {
-    title: "Eidosense Visibility X-Ray",
-    subtitle: "AI Transformacija i Digitalna Dijagnostika",
+    title: "ShadowRank",
+    subtitle: "AI Transformacija i Digitalna Dijagnostika (by Eidosense)",
     startAudit: "Nova Revizija",
     businessDetails: "Detektovani Podaci",
     score: "Indeks Vidljivosti",
     findings: "Ključni Nalazi",
     opportunities: "Propuštene Prilike",
-    solutions: "Strateška Rješenja",
-    contact: "Naredni Koraci",
-    packages: "Paketi Optimizacije",
+    solutions: "Digitalni Moduli",
+    contact: "Aktiviraj Protokol",
+    packages: "Preporučeni Moduli",
     generateReport: "Generiši Izvještaj o Transformaciji",
     analyzing: "Analiza Digitalnog Otiska...",
     analyzingCompetitors: "Procjena Gubitka Tržišnog Udjela...",
@@ -88,7 +88,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     levelInvisible: "NEVIDLJIV (DIGITALNI MRAK)",
     levelWeak: "SLAB (RANJIV)",
     levelVisible: "VIDLJIV (PROSJEK)",
-    levelHigh: "DOMINANTAN",
+    levelHigh: "DOMİNANTAN",
     searchPlaceholder: "Unesite naziv biznisa...",
     searchButton: "Skeniraj",
     searching: "Pristup Google Mapama...",
@@ -101,8 +101,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     poweredBy: "Strategy & Intelligence by Eidosense",
 
     // UI Elements
-    selectPlan: "Odaberi Paket",
-    recommended: "Preporučeno",
+    selectPlan: "Pogledaj Strategiju",
+    recommended: "Strateški Odabir",
     threatLevel: "Nivo Opasnosti",
 
     // Dynamic Sentences
@@ -128,16 +128,16 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     notDetected: "Nije Detektovano / Loša Indeksacija"
   },
   [Language.TR]: {
-    title: "Eidosense Görünürlük X-Ray",
-    subtitle: "AI Dönüşüm & Dijital Röntgen",
+    title: "ShadowRank",
+    subtitle: "AI Dönüşüm & Dijital Röntgen (Eidosense)",
     startAudit: "Yeni Sorgu",
     businessDetails: "Tespit Edilen Veriler",
     score: "Görünürlük Puanı",
     findings: "Kritik Bulgular",
     opportunities: "Kayıp Fırsatlar",
-    solutions: "Stratejik Çözümler",
-    contact: "Sonraki Adımlar",
-    packages: "Optimizasyon Paketleri",
+    solutions: "Dijital Çözümler",
+    contact: "Protokolü Başlat",
+    packages: "Önerilen Modüller",
     generateReport: "Dönüşüm Yol Haritasını Çıkar",
     analyzing: "Dijital ve AI Ayak İzi Taranıyor...",
     analyzingCompetitors: "Gelir Sızıntısı Hesaplanıyor...",
@@ -163,8 +163,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     poweredBy: "Strategy & Intelligence by Eidosense",
 
     // UI Elements
-    selectPlan: "Paketi Seç",
-    recommended: "Önerilen",
+    selectPlan: "Stratejiyi Görüntüle",
+    recommended: "Stratejik Uyum",
     threatLevel: "Tehdit Seviyesi",
 
     // Dynamic Sentences

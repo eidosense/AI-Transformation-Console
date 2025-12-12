@@ -116,13 +116,20 @@ export async function searchBusinessOnMaps(query: string, lang: string, userLoca
   try {
     const langName = getLanguageName(lang);
     
-    let locationContext = "";
+    // Construct configuration with location grounding if available
+    const config: any = {
+      tools: [{ googleMaps: {} }],
+    };
+
     if (userLocation) {
-        locationContext = `
-        **USER LOCATION (LIVE TRACKING)**: 
-        Lat: ${userLocation.lat}, Lng: ${userLocation.lng}.
-        Prioritize businesses near this location if the search query is generic.
-        `;
+        config.toolConfig = {
+            retrievalConfig: {
+                latLng: {
+                    latitude: userLocation.lat,
+                    longitude: userLocation.lng
+                }
+            }
+        };
     }
 
     const prompt = `
@@ -131,7 +138,6 @@ export async function searchBusinessOnMaps(query: string, lang: string, userLoca
       Task:
       1. Search for the business "${query}" on Google Maps. 
          - If ambiguous, prioritize businesses in Montenegro.
-         ${locationContext}
       2. Analyze the "Claim Status" and digital maturity.
       3. Find the "Market Leader" (Traditional Dominant Competitor) in the same city/category.
       4. **INFER VENUE SIZE**: Look at photos. Is it Small (<50m2), Medium, Large, or Huge?
@@ -174,6 +180,7 @@ export async function searchBusinessOnMaps(query: string, lang: string, userLoca
            "name": "Competitor Name",
            "rating": number,
            "reviewCount": number,
+           "photoCount": number,
            "status": "market_leader",
            "location": { "lat": number, "lng": number }
         }
@@ -184,9 +191,7 @@ export async function searchBusinessOnMaps(query: string, lang: string, userLoca
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash', 
       contents: prompt,
-      config: {
-        tools: [{ googleMaps: {} }],
-      }
+      config: config
     });
 
     let text = response.text || "{}";
@@ -210,7 +215,7 @@ export async function generateAIAnalysis(metrics: AuditMetrics, score: number, l
      
      **CORE TASK:**
      1. Analyze the gap between the Target and the Competitor.
-     2. FRAMING: The Competitor likely wins on "Traditional Visibility" (Signs, Basic Ads). 
+     2. FRAMING: The Competitor likely wins on "Traditional Visibility" (Traditional), but the Target has the opportunity to win on "Efficiency & Intelligence" (AI).
      3. OPPORTUNITY: The Target must win on "AI Transformation" (Data ownership, Automation, Personalized Experience).
      
      **REQUIRED INSIGHTS:**

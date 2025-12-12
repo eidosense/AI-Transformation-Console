@@ -17,6 +17,7 @@ export interface CompetitorData {
   reviewCount: number;
   status: 'market_leader' | 'contender';
   location?: Coordinates;
+  photoCount?: number;
 }
 
 // --- NEW AI TRANSFORMATION TYPES ---

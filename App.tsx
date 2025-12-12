@@ -1,12 +1,11 @@
-
-
 import React, { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, CheckCircle, Share2, LayoutDashboard, Search, ChevronRight, AlertOctagon, MapPin, Zap, TrendingUp, Target, Lock, Globe, Link as LinkIcon, Megaphone, Brain, Database, Users, ShieldAlert, Briefcase, ArrowUpRight, BarChart3, PieChart, FileText, Copy, X, ExternalLink, Phone, Instagram, MessageCircle, Box, Scale } from 'lucide-react';
+import { Activity, CheckCircle, Search, ChevronRight, AlertOctagon, MapPin, Zap, TrendingUp, Target, Globe, Link as LinkIcon, Megaphone, Brain, ShieldAlert, Briefcase, X, ExternalLink, Instagram, MessageCircle, Scale, Copy, FileText } from 'lucide-react';
 import { generateAIAnalysis, searchBusinessOnMaps, generateBoardBriefing } from './services/geminiService';
 import { Language, AuditMetrics, ReportData, Package, BoardBriefingFormData, Coordinates } from './types';
 import { TRANSLATIONS, INITIAL_METRICS, LEVEL_TRANSLATIONS } from './constants';
 import ScoreGauge from './components/ScoreGauge';
 import MapVisualizer from './components/MapVisualizer';
+import CompetitorChart from './components/CompetitorChart';
 import { BoardBriefingModal } from './components/BoardBriefingModal';
 import { ContactModal } from './components/ContactModal';
 
@@ -25,6 +24,7 @@ export const App: React.FC = () => {
   
   // Briefing Modal State
   const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
+  const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [briefingContent, setBriefingContent] = useState<string | null>(null);
 
   // Contact/Plan Modal State
@@ -236,18 +236,26 @@ export const App: React.FC = () => {
         generatedAt: new Date().toISOString()
       });
       setView('report');
+    } else {
+        alert("Failed to generate strategic analysis. Please try again.");
     }
     setIsGenerating(false);
   };
 
   const handleBriefingGenerate = async (formData: BoardBriefingFormData) => {
+    setIsBriefingModalOpen(false); // Close form
     if (!report) return;
+    
+    setIsGeneratingBriefing(true);
+    
     const response = await generateBoardBriefing({
       ...formData,
       report,
       locale: lang
     });
     
+    setIsGeneratingBriefing(false);
+
     if (response.success && response.briefing) {
       setBriefingContent(response.briefing);
     } else {
@@ -577,6 +585,9 @@ export const App: React.FC = () => {
                                             <p className="whitespace-pre-line">{report.visibilityAnalysis}</p>
                                         </div>
                                     </div>
+
+                                    {/* Competitor Comparative Chart */}
+                                    <CompetitorChart target={auditMetrics} />
                                     
                                     {/* Packages List */}
                                     <div className="space-y-4">
@@ -754,17 +765,20 @@ export const App: React.FC = () => {
                                      <div className="p-6 bg-green-950/20 border border-green-900/50 rounded-xl">
                                          <div className="text-green-400 text-sm uppercase tracking-wider mb-2">Recovery Potential</div>
                                          <div className="text-4xl font-bold text-white">{report.roiProjection.potentialRecoveryWithAI}</div>
-                                         <div className="text-xs text-green-300/70 mt-2">With full AI integration</div>
+                                         <div className="text-xs text-green-300/70 mt-2">Market share recapture estimation</div>
                                      </div>
                                      <div className="p-6 bg-blue-950/20 border border-blue-900/50 rounded-xl">
-                                         <div className="text-blue-400 text-sm uppercase tracking-wider mb-2">Time to Impact</div>
-                                         <div className="text-4xl font-bold text-white">{report.roiProjection.timeToImpactMonths} <span className="text-lg font-normal text-slate-400">months</span></div>
-                                         <div className="text-xs text-blue-300/70 mt-2">Break-even point</div>
+                                         <div className="text-blue-400 text-sm uppercase tracking-wider mb-2">Time To Impact</div>
+                                         <div className="text-4xl font-bold text-white">{report.roiProjection.timeToImpactMonths} <span className="text-lg text-slate-400">Months</span></div>
+                                         <div className="text-xs text-blue-300/70 mt-2">Velocity of implementation</div>
                                      </div>
                                  </div>
-                                 <div className="text-left bg-slate-950 p-6 rounded-lg border border-slate-800">
-                                     <h4 className="font-bold text-white mb-2">Analyst Note</h4>
-                                     <p className="text-slate-400 text-sm leading-relaxed">{report.roiProjection.narrative}</p>
+                                 
+                                 <div className="max-w-3xl mx-auto bg-slate-950/50 border border-slate-800 rounded-lg p-6 text-left">
+                                     <h4 className="text-sm font-bold text-slate-400 uppercase mb-2">Executive Narrative</h4>
+                                     <p className="text-slate-300 leading-relaxed font-mono text-sm">
+                                         "{report.roiProjection.narrative}"
+                                     </p>
                                  </div>
                              </div>
                         )}
@@ -773,7 +787,7 @@ export const App: React.FC = () => {
             )}
         </main>
 
-        {/* Modal */}
+        {/* Modals */}
         <BoardBriefingModal 
             isOpen={isBriefingModalOpen}
             onClose={() => setIsBriefingModalOpen(false)}
@@ -781,43 +795,60 @@ export const App: React.FC = () => {
             locale={lang}
             onGenerate={handleBriefingGenerate}
         />
-
-        {/* Contact / Plan Selection Modal */}
+        
         <ContactModal
             isOpen={isContactModalOpen}
             onClose={() => setIsContactModalOpen(false)}
             selectedPackage={selectedPackage}
             locale={lang}
         />
-        
-        {/* Generated Briefing Overlay (Simple) */}
+
+        {/* Briefing Loading Overlay */}
+        {isGeneratingBriefing && (
+            <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+                <div className="text-cyan-400 font-bold animate-pulse">GENERATING EXECUTIVE BRIEFING...</div>
+                <div className="text-slate-500 text-xs mt-2 font-mono">Consulting ShadowRank AI Strategy Unit</div>
+            </div>
+        )}
+
+        {/* Briefing Result Overlay */}
         {briefingContent && (
-            <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
-                <div className="bg-white text-slate-900 max-w-3xl w-full max-h-[85vh] rounded-lg flex flex-col shadow-2xl">
-                    <div className="p-4 border-b flex justify-between items-center bg-slate-100 rounded-t-lg">
-                        <h3 className="font-bold text-lg flex items-center gap-2"><FileText className="w-5 h-5" /> Generated Board Briefing</h3>
-                        <button onClick={() => setBriefingContent(null)} className="hover:bg-slate-200 p-1 rounded"><X /></button>
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+                <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+                    <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                        <div className="flex items-center gap-2 text-cyan-400">
+                            <FileText className="w-5 h-5" />
+                            <span className="font-bold">Generated Board Briefing</span>
+                        </div>
+                        <button onClick={() => setBriefingContent(null)} className="text-slate-500 hover:text-white">
+                            <X className="w-6 h-6" />
+                        </button>
                     </div>
-                    <div className="p-8 overflow-y-auto font-serif whitespace-pre-line leading-relaxed">
+                    <div className="p-6 overflow-y-auto font-mono text-sm text-slate-300 whitespace-pre-wrap bg-slate-950">
                         {briefingContent}
                     </div>
-                    <div className="p-4 border-t bg-slate-50 flex justify-end gap-2 rounded-b-lg">
+                    <div className="p-4 border-t border-slate-800 bg-slate-900 flex justify-end gap-3">
                         <button 
-                            onClick={() => {navigator.clipboard.writeText(briefingContent); alert('Copied to clipboard!');}}
-                            className="px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 flex items-center gap-2"
+                            onClick={() => {
+                                navigator.clipboard.writeText(briefingContent);
+                                alert("Copied to clipboard");
+                            }}
+                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-700 flex items-center gap-2"
                         >
                             <Copy className="w-4 h-4" /> Copy Text
                         </button>
                         <button 
                             onClick={() => setBriefingContent(null)}
-                            className="px-4 py-2 border border-slate-300 rounded hover:bg-slate-200"
+                            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold"
                         >
-                            Close
+                            Done
                         </button>
                     </div>
                 </div>
             </div>
         )}
+
     </div>
   );
-}
+};

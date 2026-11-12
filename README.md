@@ -1,20 +1,15 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ⚡ AI Transformation Console
 
-# Run and deploy your AI Studio app
+A forward-deployed enterprise console designed to translate ambiguous business workflows into structured, production-ready generative AI pipelines.
 
-This contains everything you need to run your app locally.
+### Key Capabilities
+- **Workflow Mapping:** Bridges business operations with automated LLM inference steps.
+- **Rapid Prototyping to Production:** Modular component architecture engineered for fast client-side deployment and iteration.
+- **Decision Support Interface:** Clean, executive-ready dashboard for monitoring AI-assisted operational workflows.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1A8QyCyFFh7_qRwldLVbEAwJlSpkRppYU
+### Tech Stack
+- **Frontend & Core:** TypeScript, React, Next.js, Tailwind CSS
+- **Integration:** REST APIs, LLM Inference Pipelines
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+*Built by [Arya Yildirim](https://github.com/eidosense) — AI Engineer & Forward Deployed Engineer*
